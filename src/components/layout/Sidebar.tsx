@@ -1,65 +1,60 @@
 import React from 'react';
-
-export type ActiveTab =
-  | 'datasets'
-  | 'upload'
-  | 'validation'
-  | 'cleaning'
-  | 'pipelines'
-  | 'warehouse'
-  | 'eda'
-  | 'dashboard'
-  | 'ml_studio'
-  | 'evaluation'
-  | 'quality'
-  | 'experiments';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
-  activeTab: ActiveTab;
-  onSelectTab: (tab: ActiveTab) => void;
   datasetCount: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, datasetCount }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ datasetCount }) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+
   const navSections = [
     {
       label: 'Data',
       items: [
-        { id: 'datasets' as ActiveTab, label: 'Datasets', count: datasetCount },
-        { id: 'upload' as ActiveTab, label: 'Upload' },
-        { id: 'warehouse' as ActiveTab, label: 'Warehouse & SQL' },
+        { path: '/', label: 'Datasets', count: datasetCount },
+        { path: '/upload', label: 'Upload' },
+        { path: '/warehouse', label: 'Warehouse & SQL' },
       ],
     },
     {
       label: 'Engineering',
       items: [
-        { id: 'validation' as ActiveTab, label: 'Validation' },
-        { id: 'cleaning' as ActiveTab, label: 'Transformation' },
-        { id: 'pipelines' as ActiveTab, label: 'Pipelines' },
+        { path: '/validation', label: 'Validation' },
+        { path: '/cleaning', label: 'Transformation' },
+        { path: '/pipelines', label: 'Pipelines' },
       ],
     },
     {
       label: 'Analytics',
       items: [
-        { id: 'eda' as ActiveTab, label: 'Exploration' },
-        { id: 'dashboard' as ActiveTab, label: 'Dashboards' },
+        { path: '/eda', label: 'Exploration' },
+        { path: '/dashboard', label: 'Dashboards' },
       ],
     },
     {
       label: 'Modeling',
       items: [
-        { id: 'ml_studio' as ActiveTab, label: 'Model Studio' },
-        { id: 'evaluation' as ActiveTab, label: 'Evaluation' },
+        { path: '/models', label: 'Model Studio' },
+        { path: '/evaluation', label: 'Evaluation' },
       ],
     },
     {
       label: 'Governance',
       items: [
-        { id: 'quality' as ActiveTab, label: 'Quality & Lineage' },
-        { id: 'experiments' as ActiveTab, label: 'Reports' },
+        { path: '/quality', label: 'Quality & Lineage' },
+        { path: '/reports', label: 'Reports' },
       ],
     },
   ];
+
+  const isItemActive = (path: string) => {
+    if (path === '/') {
+      return currentPath === '/' || currentPath === '/datasets';
+    }
+    return currentPath === path;
+  };
 
   return (
     <aside className="w-56 border-r border-zinc-200 bg-white flex flex-col shrink-0 select-none overflow-y-auto">
@@ -71,14 +66,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, datase
             </div>
             <div className="space-y-0.5">
               {sec.items.map((item) => {
-                const isActive = activeTab === item.id;
+                const active = isItemActive(item.path);
                 return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onSelectTab(item.id)}
+                  <Link
+                    key={item.path}
+                    to={item.path}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs transition-colors cursor-pointer text-left rounded-xs ${
-                      isActive
+                      active
                         ? 'bg-black text-white font-medium'
                         : 'text-zinc-600 hover:text-black hover:bg-zinc-100 font-normal'
                     }`}
@@ -87,13 +81,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onSelectTab, datase
                     {item.count !== undefined && (
                       <span
                         className={`text-[10px] font-mono px-1 rounded-xs ${
-                          isActive ? 'text-zinc-300' : 'text-zinc-400'
+                          active ? 'text-zinc-300' : 'text-zinc-400'
                         }`}
                       >
                         {item.count}
                       </span>
                     )}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

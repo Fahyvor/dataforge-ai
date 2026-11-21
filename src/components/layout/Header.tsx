@@ -1,9 +1,6 @@
 import React from 'react';
-import {
-  FiDatabase,
-  FiLogOut,
-  FiLogIn,
-} from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiLogOut, FiLogIn } from 'react-icons/fi';
 import { Dataset, User } from '../../types';
 
 interface HeaderProps {
@@ -11,7 +8,6 @@ interface HeaderProps {
   datasets: Dataset[];
   activeDataset: Dataset | null;
   onSelectDataset: (id: string) => void;
-  onOpenAuth: () => void;
   onOpenProfile: () => void;
   onLogout: () => void;
 }
@@ -21,22 +17,28 @@ export const Header: React.FC<HeaderProps> = ({
   datasets,
   activeDataset,
   onSelectDataset,
-  onOpenAuth,
   onOpenProfile,
   onLogout,
 }) => {
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    onLogout();
+    navigate('/login');
+  };
+
   return (
     <header className="border-b border-zinc-200 bg-white sticky top-0 z-30 px-6 py-3">
       <div className="flex items-center justify-between gap-6">
         {/* Brand */}
-        <div className="flex items-center gap-3 shrink-0">
+        <Link to="/" className="flex items-center gap-3 shrink-0 hover:opacity-85 transition-opacity">
           <div className="w-6 h-6 bg-black flex items-center justify-center text-white font-mono font-bold text-xs rounded-xs">
             D
           </div>
           <span className="font-bold text-sm tracking-tight text-black uppercase">
             DATAFORGE
           </span>
-        </div>
+        </Link>
 
         {/* Center: Dataset Selector */}
         <div className="flex items-center gap-2 max-w-sm w-full">
@@ -45,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
             <select
               value={activeDataset?.id || ''}
               onChange={(e) => onSelectDataset(e.target.value)}
-              className="bg-transparent text-zinc-900 text-xs focus:outline-none cursor-pointer truncate flex-1 font-medium"
+              className="bg-transparent text-zinc-900 text-xs focus:outline-none cursor-pointer truncate flex-1 font-medium font-mono"
             >
               {datasets.map((ds) => (
                 <option key={ds.id} value={ds.id} className="bg-white text-zinc-900">
@@ -71,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               <button
                 type="button"
-                onClick={onLogout}
+                onClick={handleSignOut}
                 className="p-1.5 border border-zinc-300 hover:border-black hover:text-black text-zinc-500 transition-colors cursor-pointer rounded-xs"
                 title="Sign Out"
               >
@@ -79,14 +81,21 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={onOpenAuth}
-              className="flex items-center gap-1.5 px-3 py-1 bg-black text-white hover:bg-zinc-800 text-xs font-medium transition-colors cursor-pointer rounded-xs"
-            >
-              <FiLogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </button>
+            <div className="flex items-center gap-2 text-xs font-mono">
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-3 py-1 bg-black text-white hover:bg-zinc-800 transition-colors cursor-pointer rounded-xs"
+              >
+                <FiLogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                to="/register"
+                className="px-3 py-1 border border-zinc-300 hover:border-black text-black transition-colors cursor-pointer rounded-xs"
+              >
+                Register
+              </Link>
+            </div>
           )}
         </div>
       </div>

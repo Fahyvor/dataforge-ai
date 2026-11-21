@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import SleekToast, { toast } from 'sleek-toast';
+import { useAuth } from './context/AuthContext';
 import { Header } from './components/layout/Header';
-import { Sidebar, ActiveTab } from './components/layout/Sidebar';
+import { Sidebar } from './components/layout/Sidebar';
 import { ProfileModal } from './components/layout/ProfileModal';
-import { AuthModal } from './components/auth/AuthModal';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
 import { DatasetUpload } from './components/datasets/DatasetUpload';
 import { DatasetViewer } from './components/datasets/DatasetViewer';
 import { DataValidation } from './components/validation/DataValidation';
@@ -16,26 +19,15 @@ import { ModelStudio } from './components/ml/ModelStudio';
 import { ModelEvaluation } from './components/ml/ModelEvaluation';
 import { QualityMonitoring } from './components/quality/QualityMonitoring';
 import { ExperimentReports } from './components/experiments/ExperimentReports';
-import { Dataset, ExperimentRun, Pipeline, TrainedModel, User, UserRole } from './types';
+import { Dataset, ExperimentRun, Pipeline, TrainedModel } from './types';
 import { INITIAL_DATASETS } from './data/sampleDatasets';
 import { getBaselineTrainedModels } from './utils/mlEngine';
 
 export function App() {
-  // Authentication & Profile State
-  const [user, setUser] = useState<User | null>({
-    id: 'usr-admin-demo',
-    name: 'Jordan Hayes',
-    email: 'jordan.hayes@dataforge.io',
-    organization: 'DataForge Engineering Lab',
-    role: 'ML Engineer',
-    createdAt: '2026-11-01T00:00:00Z',
-  });
+  const { user, logout, updateRole } = useAuth();
+  const navigate = useNavigate();
 
-  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
-
-  // Navigation State
-  const [activeTab, setActiveTab] = useState<ActiveTab>('datasets');
 
   // Datasets State
   const [datasets, setDatasets] = useState<Dataset[]>(INITIAL_DATASETS);
@@ -44,7 +36,7 @@ export function App() {
   // Models State
   const [models, setModels] = useState<TrainedModel[]>(getBaselineTrainedModels());
 
-  // Pipelines State
+  // Pipelines & Experiments State
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [experiments, setExperiments] = useState<ExperimentRun[]>([
     {
@@ -106,7 +98,7 @@ export function App() {
   const handleDatasetCreated = (newDataset: Dataset) => {
     setDatasets([newDataset, ...datasets]);
     setActiveDatasetId(newDataset.id);
-    setActiveTab('datasets');
+    navigate('/');
   };
 
   const handleUpdateDataset = (updated: Dataset) => {
@@ -133,127 +125,150 @@ export function App() {
       tag: 'Candidate',
     };
     setExperiments([newExp, ...experiments]);
-    setActiveTab('evaluation');
-  };
-
-  const handleUpdateRole = (newRole: UserRole) => {
-    if (user) {
-      setUser({ ...user, role: newRole });
-      toast.info(`Updated role: ${newRole}`);
-    }
+    navigate('/evaluation');
   };
 
   const handleLogout = () => {
-    setUser(null);
-    toast.info('Signed out of DataForge');
+    logout();
+    toast.info('Signed out');
   };
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-black selection:text-white">
+    <>
       <SleekToast position="top-right" />
 
-      {/* Header */}
-      <Header
-        user={user}
-        datasets={datasets}
-        activeDataset={activeDataset}
-        onSelectDataset={(id) => {
-          setActiveDatasetId(id);
-          const matched = datasets.find((d) => d.id === id);
-          if (matched) toast.info(`Dataset switched to: ${matched.name}`);
-        }}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        onLogout={handleLogout}
-      />
+      <Routes>
+        {/* Full-Page Auth Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Navigation Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          onSelectTab={(tab) => setActiveTab(tab)}
-          datasetCount={datasets.length}
+        {/* Platform Workspace Shell */}
+        <Route
+          path="/*"
+          element={
+            <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-black selection:text-white">
+              <Header
+                user={user}
+                datasets={datasets}
+                activeDataset={activeDataset}
+                onSelectDataset={(id) => {
+                  setActiveDatasetId(id);
+                  const matched = datasets.find((d) => d.id === id);
+                  if (matched) toast.info(`Switched dataset: ${matched.name}`);
+                }}
+                onOpenProfile={() => setIsProfileOpen(true)}
+                onLogout={handleLogout}
+              />
+
+              <div className="flex-1 flex overflow-hidden">
+                <Sidebar datasetCount={datasets.length} />
+
+                <main className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white">
+                  <Routes>
+                    <Route
+                      path="/"
+                      element={<DatasetViewer dataset={activeDataset} onNavigateTab={(tab) => navigate(tab === 'datasets' ? '/' : `/${tab}`)} />}
+                    />
+                    <Route
+                      path="/datasets"
+                      element={<Navigate to="/" replace />}
+                    />
+                    <Route
+                      path="/upload"
+                      element={
+                        <DatasetUpload
+                          onDatasetCreated={handleDatasetCreated}
+                          onSelectDataset={(id) => {
+                            setActiveDatasetId(id);
+                            navigate('/');
+                          }}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/validation"
+                      element={
+                        <DataValidation
+                          dataset={activeDataset}
+                          onNavigateToCleaning={() => navigate('/cleaning')}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/cleaning"
+                      element={
+                        <DataCleaning
+                          dataset={activeDataset}
+                          onUpdateDataset={handleUpdateDataset}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/pipelines"
+                      element={<PipelineManager pipelines={pipelines} />}
+                    />
+                    <Route
+                      path="/warehouse"
+                      element={<WarehouseExplorer />}
+                    />
+                    <Route
+                      path="/eda"
+                      element={<ExploratoryAnalysis dataset={activeDataset} />}
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={<AnalyticsDashboard dataset={activeDataset} />}
+                    />
+                    <Route
+                      path="/models"
+                      element={
+                        <ModelStudio
+                          dataset={activeDataset}
+                          onModelCreated={handleModelCreated}
+                          onNavigateToEvaluation={() => navigate('/evaluation')}
+                        />
+                      }
+                    />
+                    <Route
+                      path="/evaluation"
+                      element={<ModelEvaluation models={models} />}
+                    />
+                    <Route
+                      path="/quality"
+                      element={<QualityMonitoring dataset={activeDataset} />}
+                    />
+                    <Route
+                      path="/reports"
+                      element={
+                        <ExperimentReports
+                          dataset={activeDataset}
+                          models={models}
+                          experiments={experiments}
+                        />
+                      }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </main>
+              </div>
+
+              {/* Profile & API Tokens Modal */}
+              {user && (
+                <ProfileModal
+                  isOpen={isProfileOpen}
+                  onClose={() => setIsProfileOpen(false)}
+                  user={user}
+                  onUpdateRole={(newRole) => {
+                    updateRole(newRole);
+                    toast.info(`Updated role: ${newRole}`);
+                  }}
+                />
+              )}
+            </div>
+          }
         />
-
-        {/* Content View */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white">
-          {activeTab === 'datasets' && (
-            <DatasetViewer
-              dataset={activeDataset}
-              onNavigateTab={(tab) => setActiveTab(tab)}
-            />
-          )}
-
-          {activeTab === 'upload' && (
-            <DatasetUpload
-              onDatasetCreated={handleDatasetCreated}
-              onSelectDataset={(id) => {
-                setActiveDatasetId(id);
-                setActiveTab('datasets');
-              }}
-            />
-          )}
-
-          {activeTab === 'validation' && (
-            <DataValidation
-              dataset={activeDataset}
-              onNavigateToCleaning={() => setActiveTab('cleaning')}
-            />
-          )}
-
-          {activeTab === 'cleaning' && (
-            <DataCleaning
-              dataset={activeDataset}
-              onUpdateDataset={handleUpdateDataset}
-            />
-          )}
-
-          {activeTab === 'pipelines' && <PipelineManager pipelines={pipelines} />}
-
-          {activeTab === 'warehouse' && <WarehouseExplorer />}
-
-          {activeTab === 'eda' && <ExploratoryAnalysis dataset={activeDataset} />}
-
-          {activeTab === 'dashboard' && <AnalyticsDashboard dataset={activeDataset} />}
-
-          {activeTab === 'ml_studio' && (
-            <ModelStudio
-              dataset={activeDataset}
-              onModelCreated={handleModelCreated}
-              onNavigateToEvaluation={() => setActiveTab('evaluation')}
-            />
-          )}
-
-          {activeTab === 'evaluation' && <ModelEvaluation models={models} />}
-
-          {activeTab === 'quality' && <QualityMonitoring dataset={activeDataset} />}
-
-          {activeTab === 'experiments' && (
-            <ExperimentReports
-              dataset={activeDataset}
-              models={models}
-              experiments={experiments}
-            />
-          )}
-        </main>
-      </div>
-
-      {/* Modals */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onLogin={(newUser) => setUser(newUser)}
-      />
-
-      {user && (
-        <ProfileModal
-          isOpen={isProfileOpen}
-          onClose={() => setIsProfileOpen(false)}
-          user={user}
-          onUpdateRole={handleUpdateRole}
-        />
-      )}
-    </div>
+      </Routes>
+    </>
   );
 }
 
