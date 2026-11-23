@@ -33,26 +33,27 @@ export const ExploratoryAnalysis: React.FC<ExploratoryAnalysisProps> = ({ datase
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="border-b border-zinc-200 pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-black">Exploratory Data Analysis</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Distribution statistics, parametric moments, and correlations</p>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Exploratory Data Analysis</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">Distribution statistics, parametric moments, and correlation matrix</p>
       </div>
 
       {/* Statistical Summary Box */}
-      <div className="border border-zinc-200 p-5 space-y-4">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-bold">
-          Summary & Observations
+      <div className="border border-zinc-200 rounded p-5 space-y-4 bg-white">
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-bold flex items-center gap-2">
+          <span>Executive Statistical Summary</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
         </div>
         <p className="text-xs text-zinc-700 leading-relaxed font-sans">{aiExecutiveSummary}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-zinc-100 text-xs">
           <div>
-            <div className="text-[11px] font-mono uppercase text-zinc-400 mb-2 font-medium">
+            <div className="text-[11px] font-mono uppercase text-blue-700 mb-2 font-medium">
               Key Findings
             </div>
             <ul className="space-y-1.5 font-mono text-[11px] text-zinc-700">
               {keyFindings.map((finding, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-zinc-400">·</span>
+                  <span className="text-blue-500 font-bold">›</span>
                   <span>{finding}</span>
                 </li>
               ))}
@@ -60,13 +61,13 @@ export const ExploratoryAnalysis: React.FC<ExploratoryAnalysisProps> = ({ datase
           </div>
 
           <div>
-            <div className="text-[11px] font-mono uppercase text-zinc-400 mb-2 font-medium">
+            <div className="text-[11px] font-mono uppercase text-emerald-700 mb-2 font-medium">
               Recommended Preprocessing
             </div>
             <ul className="space-y-1.5 font-mono text-[11px] text-zinc-700">
               {recommendedActions.map((action, idx) => (
                 <li key={idx} className="flex items-start gap-2">
-                  <span className="text-zinc-400">·</span>
+                  <span className="text-emerald-500 font-bold">›</span>
                   <span>{action}</span>
                 </li>
               ))}
@@ -77,33 +78,33 @@ export const ExploratoryAnalysis: React.FC<ExploratoryAnalysisProps> = ({ datase
 
       {/* Statistical Moments Table */}
       <div className="space-y-3">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
           Statistical Moments & Cardinality
         </div>
 
-        <div className="border-t border-black overflow-x-auto">
+        <div className="border border-zinc-200 rounded overflow-hidden overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="border-b border-zinc-200 text-zinc-500 text-[11px]">
-                <th className="py-2.5 px-3 font-medium text-black">Feature</th>
-                <th className="py-2.5 px-3 font-medium text-black">Type</th>
-                <th className="py-2.5 px-3 font-medium text-black">Count</th>
-                <th className="py-2.5 px-3 font-medium text-black">Missing %</th>
-                <th className="py-2.5 px-3 font-medium text-black">Mean</th>
-                <th className="py-2.5 px-3 font-medium text-black">Median</th>
-                <th className="py-2.5 px-3 font-medium text-black">Std Dev</th>
-                <th className="py-2.5 px-3 font-medium text-black">Min</th>
-                <th className="py-2.5 px-3 font-medium text-black">Max</th>
-                <th className="py-2.5 px-3 font-medium text-black">Skewness</th>
+              <tr className="border-b border-zinc-200 bg-zinc-50/80 text-zinc-500 text-[11px]">
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Feature</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Type</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Count</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Missing %</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Mean</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Median</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Std Dev</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Min</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Max</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Skewness</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-[11px]">
               {summaryStats.map((st) => (
-                <tr key={st.column} className="hover:bg-zinc-50 transition-colors">
-                  <td className="py-2 px-3 font-semibold text-black">{st.column}</td>
-                  <td className="py-2 px-3 text-zinc-400 text-[10px]">{st.type}</td>
+                <tr key={st.column} className="hover:bg-blue-50/30 transition-colors">
+                  <td className="py-2 px-3 font-semibold text-zinc-900">{st.column}</td>
+                  <td className="py-2 px-3 text-blue-600 font-medium text-[10px]">{st.type}</td>
                   <td className="py-2 px-3 text-zinc-700">{st.count}</td>
-                  <td className={`py-2 px-3 ${st.missingPercentage > 0 ? 'text-black font-bold' : 'text-zinc-400'}`}>
+                  <td className={`py-2 px-3 ${st.missingPercentage > 0 ? 'text-amber-600 font-bold bg-amber-50/40' : 'text-zinc-400'}`}>
                     {st.missingPercentage}%
                   </td>
                   <td className="py-2 px-3 text-zinc-800">{st.mean ?? '—'}</td>
@@ -122,7 +123,7 @@ export const ExploratoryAnalysis: React.FC<ExploratoryAnalysisProps> = ({ datase
       {/* Correlation Coefficients */}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-          <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
+          <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
             Correlation Coefficients
           </div>
 
@@ -135,30 +136,46 @@ export const ExploratoryAnalysis: React.FC<ExploratoryAnalysisProps> = ({ datase
               step="0.05"
               value={corrThreshold}
               onChange={(e) => setCorrThreshold(Number(e.target.value))}
-              className="w-20 accent-black cursor-pointer"
+              className="w-20 accent-blue-600 cursor-pointer"
             />
-            <span className="font-semibold text-black">≥ {corrThreshold.toFixed(2)}</span>
+            <span className="font-semibold text-blue-600">≥ {corrThreshold.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 font-mono text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 font-mono text-xs">
           {filteredCorrelations
             .filter((c) => c.colA !== c.colB)
             .slice(0, 12)
-            .map((cell, idx) => (
-              <div
-                key={idx}
-                className="p-2.5 border border-zinc-200 flex items-center justify-between"
-              >
-                <div className="truncate mr-2">
-                  <div className="font-medium text-black text-[11px] truncate">{cell.colA}</div>
-                  <div className="text-[10px] text-zinc-400 truncate">× {cell.colB}</div>
+            .map((cell, idx) => {
+              const isPos = cell.coefficient > 0;
+              const isHigh = Math.abs(cell.coefficient) >= 0.5;
+              return (
+                <div
+                  key={idx}
+                  className={`p-2.5 rounded border flex items-center justify-between transition-colors ${
+                    isPos
+                      ? isHigh
+                        ? 'bg-blue-50/70 border-blue-200/80 text-blue-900'
+                        : 'bg-white border-zinc-200 text-zinc-900'
+                      : isHigh
+                      ? 'bg-rose-50/70 border-rose-200/80 text-rose-900'
+                      : 'bg-white border-zinc-200 text-zinc-900'
+                  }`}
+                >
+                  <div className="truncate mr-2">
+                    <div className="font-medium text-[11px] truncate">{cell.colA}</div>
+                    <div className="text-[10px] text-zinc-400 truncate">× {cell.colB}</div>
+                  </div>
+                  <span
+                    className={`font-bold text-xs ${
+                      isPos ? 'text-blue-600' : 'text-rose-600'
+                    }`}
+                  >
+                    {isPos ? `+${cell.coefficient}` : cell.coefficient}
+                  </span>
                 </div>
-                <span className="font-bold text-black text-xs">
-                  {cell.coefficient > 0 ? `+${cell.coefficient}` : cell.coefficient}
-                </span>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     </div>

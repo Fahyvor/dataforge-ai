@@ -119,8 +119,8 @@ export const WarehouseExplorer: React.FC = () => {
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="border-b border-zinc-200 pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-black">Data Warehouse & SQL</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Database connectivity and query console</p>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Data Warehouse & SQL</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">Database connectivity, federated engine, and query console</p>
       </div>
 
       {/* Connections List */}
@@ -129,17 +129,20 @@ export const WarehouseExplorer: React.FC = () => {
           <div
             key={conn.id}
             onClick={() => setSelectedConn(conn.id)}
-            className={`p-3 border text-xs cursor-pointer transition-colors space-y-1 ${
+            className={`p-3.5 rounded border text-xs cursor-pointer transition-all space-y-1.5 ${
               selectedConn === conn.id
-                ? 'border-black bg-white'
-                : 'border-zinc-200 hover:border-zinc-400 bg-white'
+                ? 'border-blue-500 bg-blue-50/20 ring-1 ring-blue-500/40 shadow-xs'
+                : 'border-zinc-200 hover:border-zinc-300 bg-white'
             }`}
           >
-            <div className="font-semibold text-black">{conn.name}</div>
-            <div className="text-[11px] font-mono text-zinc-400 truncate">{conn.host}</div>
-            <div className="pt-2 text-[10px] font-mono text-zinc-500 flex justify-between">
-              <span className="uppercase font-semibold">{conn.type}</span>
-              <span>{conn.latencyMs}ms</span>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-zinc-900">{conn.name}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" title="Connected" />
+            </div>
+            <div className="text-[11px] font-mono text-zinc-500 truncate">{conn.host}</div>
+            <div className="pt-1 text-[10px] font-mono text-zinc-500 flex justify-between border-t border-zinc-100">
+              <span className="uppercase font-semibold text-blue-700">{conn.type}</span>
+              <span className="text-emerald-600 font-semibold">{conn.latencyMs}ms</span>
             </div>
           </div>
         ))}
@@ -148,11 +151,11 @@ export const WarehouseExplorer: React.FC = () => {
       {/* SQL Editor */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-mono">
-          <span className="font-semibold uppercase tracking-wider text-black">
+          <span className="font-semibold uppercase tracking-wider text-zinc-900">
             Query Editor
           </span>
           <span className="text-zinc-500">
-            Latency: {queryResult.executionTimeMs}ms · Scanned: {queryResult.bytesScannedKb}KB
+            Latency: <strong className="text-emerald-600">{queryResult.executionTimeMs}ms</strong> · Scanned: <strong className="text-blue-600">{queryResult.bytesScannedKb}KB</strong>
           </span>
         </div>
 
@@ -161,7 +164,7 @@ export const WarehouseExplorer: React.FC = () => {
           value={queryText}
           onChange={(e) => setQueryText(e.target.value)}
           placeholder="SELECT * FROM table..."
-          className="w-full p-3 border border-zinc-300 text-xs font-mono text-black placeholder-zinc-400 focus:outline-none focus:border-black resize-y"
+          className="w-full p-3 rounded border border-zinc-200 text-xs font-mono text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y bg-white"
         />
 
         <div className="flex justify-end">
@@ -169,25 +172,25 @@ export const WarehouseExplorer: React.FC = () => {
             type="button"
             disabled={isExecuting}
             onClick={handleExecuteSql}
-            className="px-4 py-1.5 bg-black hover:bg-zinc-800 disabled:opacity-40 text-white text-xs font-mono font-medium transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-xs font-mono font-medium transition-colors cursor-pointer shadow-xs"
           >
-            {isExecuting ? 'Running...' : 'Execute Query'}
+            {isExecuting ? 'Running Query...' : 'Execute Query'}
           </button>
         </div>
       </div>
 
       {/* Query Results */}
       <div className="space-y-2">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
           Results ({queryResult.rows.length} rows)
         </div>
 
-        <div className="border-t border-black overflow-x-auto">
+        <div className="border border-zinc-200 rounded overflow-hidden overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="border-b border-zinc-200 text-zinc-500 text-[11px]">
+              <tr className="border-b border-zinc-200 bg-zinc-50/80 text-zinc-500 text-[11px]">
                 {queryResult.columns.map((col) => (
-                  <th key={col} className="py-2 px-3 font-medium text-black">
+                  <th key={col} className="py-2.5 px-3 font-semibold text-zinc-900 whitespace-nowrap">
                     {col}
                   </th>
                 ))}
@@ -195,9 +198,9 @@ export const WarehouseExplorer: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-zinc-100 text-[11px]">
               {queryResult.rows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-zinc-50 transition-colors">
+                <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
                   {row.map((val: any, cIdx: number) => (
-                    <td key={cIdx} className="py-2 px-3 text-zinc-800">
+                    <td key={cIdx} className="py-2 px-3 text-zinc-800 whitespace-nowrap">
                       {String(val)}
                     </td>
                   ))}

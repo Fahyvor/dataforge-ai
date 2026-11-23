@@ -35,19 +35,19 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col justify-between p-6 sm:p-10 font-sans selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col justify-between p-6 sm:p-10 font-sans selection:bg-blue-600 selection:text-white">
       {/* Top Header */}
       <div className="flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 text-black hover:opacity-80 transition-opacity">
-          <div className="w-6 h-6 bg-black flex items-center justify-center text-white font-mono font-bold text-xs rounded-xs">
+        <Link to="/" className="flex items-center gap-2.5 text-zinc-900 hover:opacity-85 transition-opacity">
+          <div className="w-7 h-7 bg-blue-600 flex items-center justify-center text-white font-mono font-bold text-xs rounded-md shadow-xs">
             D
           </div>
-          <span className="font-bold text-sm tracking-tight uppercase">DATAFORGE</span>
+          <span className="font-extrabold text-sm tracking-tight uppercase">DATAFORGE</span>
         </Link>
 
         <Link
           to="/"
-          className="text-xs font-mono text-zinc-500 hover:text-black transition-colors"
+          className="text-xs font-mono text-zinc-500 hover:text-blue-600 transition-colors"
         >
           ← Return to Platform
         </Link>
@@ -56,7 +56,7 @@ export const RegisterPage: React.FC = () => {
       {/* Center Auth Card */}
       <div className="w-full max-w-sm mx-auto my-10 space-y-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-black">Create Account</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Create Account</h1>
           <p className="text-xs text-zinc-500 font-mono">
             Register a new workspace identity
           </p>
@@ -73,7 +73,7 @@ export const RegisterPage: React.FC = () => {
               placeholder="Jordan Hayes"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black rounded-xs"
+              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg transition-colors"
             />
           </div>
 
@@ -87,7 +87,7 @@ export const RegisterPage: React.FC = () => {
               placeholder="name@organization.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black rounded-xs font-mono"
+              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
             />
           </div>
 
@@ -101,7 +101,7 @@ export const RegisterPage: React.FC = () => {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black rounded-xs font-mono"
+              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
             />
           </div>
 
@@ -114,7 +114,7 @@ export const RegisterPage: React.FC = () => {
               placeholder="Company or Research Lab"
               value={organization}
               onChange={(e) => setOrganization(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black rounded-xs"
+              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg transition-colors"
             />
           </div>
 
@@ -125,7 +125,7 @@ export const RegisterPage: React.FC = () => {
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as UserRole)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-black focus:outline-none focus:border-black cursor-pointer rounded-xs"
+              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 focus:outline-none focus:border-blue-600 cursor-pointer rounded-lg transition-colors"
             >
               <option value="Data Engineer">Data Engineer</option>
               <option value="ML Engineer">ML Engineer</option>
@@ -136,7 +136,7 @@ export const RegisterPage: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-black hover:bg-zinc-800 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-xs mt-2"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-lg shadow-xs mt-2"
           >
             Register Account
           </button>
@@ -145,7 +145,7 @@ export const RegisterPage: React.FC = () => {
         {/* Link to Login */}
         <div className="pt-2 text-center text-xs text-zinc-600 border-t border-zinc-200">
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-black underline underline-offset-2 hover:opacity-80">
+          <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2">
             Sign In
           </Link>
         </div>

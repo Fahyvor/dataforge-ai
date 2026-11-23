@@ -134,10 +134,10 @@ export const DatasetUpload: React.FC<DatasetUploadProps> = ({
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`p-12 border transition-colors cursor-pointer text-center space-y-2 ${
+        className={`p-12 border-2 border-dashed rounded-lg transition-all cursor-pointer text-center space-y-3 ${
           isDragging
-            ? 'border-black bg-zinc-50'
-            : 'border-zinc-300 hover:border-black bg-white'
+            ? 'border-blue-500 bg-blue-50/40 scale-[1.005]'
+            : 'border-zinc-200 hover:border-blue-400 bg-white hover:bg-zinc-50/40'
         }`}
       >
         <input
@@ -148,10 +148,14 @@ export const DatasetUpload: React.FC<DatasetUploadProps> = ({
           className="hidden"
         />
 
-        <div className="text-xs font-mono font-medium text-black">
-          {isProcessing ? 'Processing file...' : 'Drop files here or click to browse'}
+        <div className="w-10 h-10 mx-auto rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+          <FiUpload className="w-5 h-5" />
         </div>
-        <p className="text-[11px] text-zinc-400 font-mono">
+
+        <div className="text-xs font-mono font-medium text-zinc-900">
+          {isProcessing ? 'Processing records and inferring schema...' : 'Drop files here or click to browse'}
+        </div>
+        <p className="text-[11px] text-zinc-500 font-mono">
           CSV, JSON, XLSX up to 50MB
         </p>
       </div>
@@ -167,7 +171,7 @@ export const DatasetUpload: React.FC<DatasetUploadProps> = ({
             placeholder="Dataset Name"
             value={datasetName}
             onChange={(e) => setDatasetName(e.target.value)}
-            className="w-full px-3 py-1.5 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black"
+            className="w-full px-3 py-1.5 rounded border border-zinc-200 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           />
         </div>
         <div>
@@ -179,34 +183,39 @@ export const DatasetUpload: React.FC<DatasetUploadProps> = ({
             placeholder="Description or Source"
             value={datasetDescription}
             onChange={(e) => setDatasetDescription(e.target.value)}
-            className="w-full px-3 py-1.5 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black"
+            className="w-full px-3 py-1.5 rounded border border-zinc-200 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           />
         </div>
       </div>
 
       {/* Sample Datasets */}
       <div className="space-y-3 pt-6 border-t border-zinc-200">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-bold">
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-bold">
           Sample Datasets
         </div>
 
-        <div className="border-t border-zinc-200 divide-y divide-zinc-100">
+        <div className="border border-zinc-200 rounded divide-y divide-zinc-100 overflow-hidden">
           {INITIAL_DATASETS.map((ds) => (
             <div
               key={ds.id}
-              className="py-3 flex items-center justify-between text-xs"
+              className="p-3.5 flex items-center justify-between text-xs hover:bg-zinc-50/70 transition-colors"
             >
               <div>
-                <div className="font-semibold text-black">{ds.name}</div>
-                <div className="text-[11px] text-zinc-500 font-mono">
-                  {ds.format.toUpperCase()} · {ds.rowCount} rows · {ds.columnCount} columns
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-900">{ds.name}</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 uppercase font-medium">
+                    {ds.format}
+                  </span>
+                </div>
+                <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
+                  {ds.rowCount} rows · {ds.columnCount} columns · Quality: <span className="text-emerald-600 font-semibold">{ds.qualityScore}%</span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => onSelectDataset(ds.id)}
-                className="px-3 py-1 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+                className="px-3 py-1 rounded border border-zinc-200 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 text-zinc-700 text-xs font-mono transition-colors"
               >
                 Load
               </button>

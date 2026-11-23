@@ -37,18 +37,18 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
           Model Comparison Leaderboard
         </div>
 
-        <div className="border-t border-black overflow-x-auto">
+        <div className="border border-zinc-200 rounded overflow-hidden overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="border-b border-zinc-200 text-zinc-500 text-[11px]">
-                <th className="py-2.5 px-3 font-medium text-black">Model</th>
-                <th className="py-2.5 px-3 font-medium text-black">Algorithm</th>
-                <th className="py-2.5 px-3 font-medium text-black">Accuracy</th>
-                <th className="py-2.5 px-3 font-medium text-black">Precision</th>
-                <th className="py-2.5 px-3 font-medium text-black">Recall</th>
-                <th className="py-2.5 px-3 font-medium text-black">ROC-AUC</th>
-                <th className="py-2.5 px-3 font-medium text-black">Latency</th>
-                <th className="py-2.5 px-3 font-medium text-black">Status</th>
+              <tr className="border-b border-zinc-200 bg-zinc-50/80 text-zinc-500 text-[11px]">
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Model</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Algorithm</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Accuracy</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Precision</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Recall</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">ROC-AUC</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Latency</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-[11px]">
@@ -61,13 +61,13 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
                     onClick={() => setSelectedModelId(mdl.id)}
                     className={`cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-zinc-100 font-semibold text-black'
+                        ? 'bg-blue-50/50 font-semibold text-zinc-900 border-l-2 border-l-blue-600'
                         : 'hover:bg-zinc-50 text-zinc-700'
                     }`}
                   >
                     <td className="py-2 px-3">{mdl.name}</td>
                     <td className="py-2 px-3 text-zinc-500">{mdl.algorithm}</td>
-                    <td className="py-2 px-3 font-bold text-black">
+                    <td className="py-2 px-3 font-bold text-emerald-600">
                       {(score * 100).toFixed(1)}%
                     </td>
                     <td className="py-2 px-3">
@@ -76,10 +76,12 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
                     <td className="py-2 px-3">
                       {mdl.metrics.recall ? `${(mdl.metrics.recall * 100).toFixed(1)}%` : '—'}
                     </td>
-                    <td className="py-2 px-3">{mdl.metrics.rocAuc ?? '—'}</td>
-                    <td className="py-2 px-3 text-zinc-400">{mdl.metrics.inferenceLatencyMs}ms</td>
-                    <td className="py-2 px-3 uppercase text-[10px] text-zinc-600 font-mono">
-                      {mdl.status}
+                    <td className="py-2 px-3 text-indigo-600 font-semibold">{mdl.metrics.rocAuc ?? '—'}</td>
+                    <td className="py-2 px-3 text-zinc-500">{mdl.metrics.inferenceLatencyMs}ms</td>
+                    <td className="py-2 px-3">
+                      <span className="uppercase text-[9px] font-semibold px-1.5 py-0.5 rounded border border-blue-200 bg-blue-50 text-blue-700 font-mono">
+                        {mdl.status}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -92,36 +94,36 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 border-b border-zinc-200 pb-6">
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Accuracy</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Accuracy</div>
+          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
             {metrics.accuracy ? `${(metrics.accuracy * 100).toFixed(1)}%` : `${metrics.r2Score}`}
           </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Precision</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Precision</div>
+          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">
             {metrics.precision ? `${(metrics.precision * 100).toFixed(1)}%` : 'N/A'}
           </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Recall</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Recall</div>
+          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">
             {metrics.recall ? `${(metrics.recall * 100).toFixed(1)}%` : 'N/A'}
           </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">F1 Score</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">F1 Score</div>
+          <div className="text-2xl font-bold font-mono text-violet-600 mt-1">
             {metrics.f1Score ? metrics.f1Score.toFixed(3) : 'N/A'}
           </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Latency</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Latency</div>
+          <div className="text-2xl font-bold font-mono text-zinc-700 mt-1">
             {metrics.inferenceLatencyMs}ms
           </div>
         </div>
@@ -132,35 +134,35 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
         {/* Confusion Matrix */}
         {confusionMatrix && (
           <div className="space-y-3 font-mono">
-            <div className="text-xs uppercase tracking-wider text-black font-semibold">
+            <div className="text-xs uppercase tracking-wider text-zinc-900 font-semibold">
               Confusion Matrix
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="p-4 border border-zinc-200">
-                <div className="text-zinc-400 text-[10px] uppercase">True Negative</div>
-                <div className="text-2xl font-bold text-black mt-1 font-mono">
+              <div className="p-4 rounded border border-emerald-200/80 bg-emerald-50/30">
+                <div className="text-emerald-700 text-[10px] uppercase font-semibold">True Negative</div>
+                <div className="text-2xl font-bold text-emerald-900 mt-1 font-mono">
                   {confusionMatrix.matrix[0][0]}
                 </div>
               </div>
 
-              <div className="p-4 border border-zinc-200">
-                <div className="text-zinc-400 text-[10px] uppercase">False Positive</div>
-                <div className="text-2xl font-bold text-black mt-1 font-mono">
+              <div className="p-4 rounded border border-amber-200/80 bg-amber-50/30">
+                <div className="text-amber-700 text-[10px] uppercase font-semibold">False Positive</div>
+                <div className="text-2xl font-bold text-amber-900 mt-1 font-mono">
                   {confusionMatrix.matrix[0][1]}
                 </div>
               </div>
 
-              <div className="p-4 border border-zinc-200">
-                <div className="text-zinc-400 text-[10px] uppercase">False Negative</div>
-                <div className="text-2xl font-bold text-black mt-1 font-mono">
+              <div className="p-4 rounded border border-amber-200/80 bg-amber-50/30">
+                <div className="text-amber-700 text-[10px] uppercase font-semibold">False Negative</div>
+                <div className="text-2xl font-bold text-amber-900 mt-1 font-mono">
                   {confusionMatrix.matrix[1][0]}
                 </div>
               </div>
 
-              <div className="p-4 border border-zinc-200">
-                <div className="text-zinc-400 text-[10px] uppercase">True Positive</div>
-                <div className="text-2xl font-bold text-black mt-1 font-mono">
+              <div className="p-4 rounded border border-emerald-200/80 bg-emerald-50/30">
+                <div className="text-emerald-700 text-[10px] uppercase font-semibold">True Positive</div>
+                <div className="text-2xl font-bold text-emerald-900 mt-1 font-mono">
                   {confusionMatrix.matrix[1][1]}
                 </div>
               </div>
@@ -170,7 +172,7 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
 
         {/* Feature Importance */}
         <div className="space-y-3 font-mono">
-          <div className="text-xs uppercase tracking-wider text-black font-semibold">
+          <div className="text-xs uppercase tracking-wider text-zinc-900 font-semibold">
             Feature Importance
           </div>
 
@@ -181,10 +183,10 @@ export const ModelEvaluation: React.FC<ModelEvaluationProps> = ({ models }) => {
                 <div key={fi.feature} className="space-y-1 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-zinc-700">{fi.feature}</span>
-                    <span className="text-black font-bold">{pct}%</span>
+                    <span className="text-blue-600 font-bold">{pct}%</span>
                   </div>
-                  <div className="h-1 bg-zinc-100">
-                    <div style={{ width: `${pct}%` }} className="h-full bg-black" />
+                  <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+                    <div style={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full transition-all" />
                   </div>
                 </div>
               );

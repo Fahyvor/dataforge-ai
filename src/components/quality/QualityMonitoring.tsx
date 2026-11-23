@@ -30,87 +30,110 @@ export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset })
     <div className="space-y-8 max-w-5xl">
       {/* Header */}
       <div className="border-b border-zinc-200 pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-black">Quality & Lineage</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Covariate drift index and version control history</p>
+        <h1 className="text-xl font-bold tracking-tight text-zinc-900">Quality & Lineage</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">Covariate drift index, PSI metrics, and immutable version lineage</p>
       </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 border-b border-zinc-200 pb-6">
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Quality Index</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">{dataset.qualityScore}/100</div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Quality Index</div>
+          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">{dataset.qualityScore}/100</div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Completeness</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">{(validation.completenessRatio * 100).toFixed(1)}%</div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Completeness</div>
+          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">{(validation.completenessRatio * 100).toFixed(1)}%</div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Validity</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">{(validation.validityRatio * 100).toFixed(1)}%</div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Validity</div>
+          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">{(validation.validityRatio * 100).toFixed(1)}%</div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-400">Snapshot</div>
-          <div className="text-2xl font-bold font-mono text-black mt-1">{dataset.currentVersion}</div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Active Snapshot</div>
+          <div className="text-2xl font-bold font-mono text-zinc-900 mt-1">{dataset.currentVersion}</div>
         </div>
       </div>
 
       {/* Covariate Drift */}
       <div className="space-y-3">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
-          Feature Drift (PSI)
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
+          Feature Drift (Population Stability Index)
         </div>
 
         {drift.length === 0 ? (
-          <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200">
+          <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200 rounded">
             Insufficient variance to calculate drift.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-xs">
-            {drift.slice(0, 6).map((item) => (
-              <div key={item.feature} className="p-3 border border-zinc-200 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-black">{item.feature}</span>
-                  <span className="text-[10px] uppercase text-zinc-500">
-                    {item.status.replace('_', ' ')}
-                  </span>
+            {drift.slice(0, 6).map((item) => {
+              const isStable = item.status === 'stable';
+              const isModerate = item.status === 'moderate_drift';
+              return (
+                <div
+                  key={item.feature}
+                  className={`p-3.5 rounded border space-y-1.5 transition-colors ${
+                    isStable
+                      ? 'border-emerald-200/80 bg-emerald-50/20'
+                      : isModerate
+                      ? 'border-amber-200/80 bg-amber-50/20'
+                      : 'border-rose-200/80 bg-rose-50/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-zinc-900">{item.feature}</span>
+                    <span
+                      className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border ${
+                        isStable
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : isModerate
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-rose-50 text-rose-700 border-rose-200'
+                      }`}
+                    >
+                      {item.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="text-zinc-600 text-[11px]">
+                    PSI Score: <strong className={isStable ? 'text-emerald-700' : isModerate ? 'text-amber-700' : 'text-rose-700'}>{item.psiScore}</strong>
+                  </div>
+                  <div className="text-[10px] text-zinc-400 flex justify-between pt-1 border-t border-zinc-100">
+                    <span>Baseline: {item.baselineMean}</span>
+                    <span>Current: {item.currentMean}</span>
+                  </div>
                 </div>
-                <div className="text-zinc-500 text-[11px]">
-                  PSI Score: <strong className="text-black">{item.psiScore}</strong>
-                </div>
-                <div className="text-[10px] text-zinc-400 flex justify-between">
-                  <span>Base: {item.baselineMean}</span>
-                  <span>Curr: {item.currentMean}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Version Lineage */}
       <div className="space-y-3">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
-          Version Lineage
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
+          Version Lineage & Provenance
         </div>
 
-        <div className="border-t border-black divide-y divide-zinc-200">
+        <div className="border border-zinc-200 rounded divide-y divide-zinc-100 overflow-hidden">
           {dataset.versions.map((ver) => (
-            <div key={ver.versionId} className="py-3 flex items-center justify-between text-xs font-mono">
+            <div key={ver.versionId} className="p-3.5 flex items-center justify-between text-xs font-mono hover:bg-zinc-50/60 transition-colors">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-black">{ver.versionTag}</span>
-                  <span className="text-zinc-700">{ver.description}</span>
+                  <span className="font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[10px]">
+                    {ver.versionTag}
+                  </span>
+                  <span className="text-zinc-900 font-medium">{ver.description}</span>
                 </div>
-                <div className="text-[11px] text-zinc-400 mt-0.5">
-                  Author: {ver.author} · {new Date(ver.createdAt).toLocaleDateString()} · {ver.dataHash.slice(0, 16)}...
+                <div className="text-[11px] text-zinc-400 mt-1">
+                  Author: <span className="text-zinc-600">{ver.author}</span> · {new Date(ver.createdAt).toLocaleDateString()} · {ver.dataHash.slice(0, 16)}...
                 </div>
               </div>
 
               <div className="text-right text-[11px] text-zinc-600">
-                Quality: {ver.qualityScore}% · {ver.rowCount} rows
+                Quality: <strong className="text-emerald-600">{ver.qualityScore}%</strong> · {ver.rowCount.toLocaleString()} rows
               </div>
             </div>
           ))}

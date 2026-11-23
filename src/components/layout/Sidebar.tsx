@@ -71,17 +71,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ datasetCount }) => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs transition-colors cursor-pointer text-left rounded-xs ${
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs transition-all cursor-pointer text-left rounded-lg ${
                       active
-                        ? 'bg-black text-white font-medium'
-                        : 'text-zinc-600 hover:text-black hover:bg-zinc-100 font-normal'
+                        ? 'bg-blue-50/80 text-blue-700 font-semibold border border-blue-200/60 shadow-2xs'
+                        : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 font-normal border border-transparent'
                     }`}
                   >
                     <span>{item.label}</span>
                     {item.count !== undefined && (
                       <span
-                        className={`text-[10px] font-mono px-1 rounded-xs ${
-                          active ? 'text-zinc-300' : 'text-zinc-400'
+                        className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                          active
+                            ? 'bg-blue-100 text-blue-800 font-semibold'
+                            : 'bg-zinc-100 text-zinc-500'
                         }`}
                       >
                         {item.count}
@@ -95,8 +97,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ datasetCount }) => {
         ))}
       </div>
 
-      <div className="mt-auto p-4 border-t border-zinc-200 text-[11px] font-mono text-zinc-400">
-        DATAFORGE v1.0
+      <div className="mt-auto p-4 border-t border-zinc-200 text-[11px] font-mono text-zinc-400 flex items-center justify-between">
+        <span>DATAFORGE</span>
+        <span className="text-blue-600 font-semibold">v1.0</span>
       </div>
     </aside>
   );

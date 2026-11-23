@@ -87,53 +87,63 @@ export const ExperimentReports: React.FC<ExperimentReportsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-black">Reports & Experiments</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Experiment parameter tracking and report generation</p>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Reports & Experiments</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">Statistical experiment tracking, model promotion, and technical audits</p>
         </div>
 
         <button
           type="button"
           onClick={handleGenerateReport}
-          className="px-4 py-2 bg-black hover:bg-zinc-800 text-white font-mono text-xs transition-colors cursor-pointer"
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-medium transition-colors cursor-pointer shadow-xs"
         >
-          Generate Report
+          Generate Audit Report
         </button>
       </div>
 
       {/* Experiments Ledger */}
       <div className="space-y-3">
-        <div className="text-xs font-mono uppercase tracking-wider text-black font-semibold">
+        <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
           Experiment Runs ({experiments.length})
         </div>
 
-        <div className="border-t border-black overflow-x-auto">
+        <div className="border border-zinc-200 rounded overflow-hidden overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse font-mono">
             <thead>
-              <tr className="border-b border-zinc-200 text-zinc-500 text-[11px]">
-                <th className="py-2.5 px-3 font-medium text-black">Run ID</th>
-                <th className="py-2.5 px-3 font-medium text-black">Experiment</th>
-                <th className="py-2.5 px-3 font-medium text-black">Algorithm</th>
-                <th className="py-2.5 px-3 font-medium text-black">Accuracy</th>
-                <th className="py-2.5 px-3 font-medium text-black">F1</th>
-                <th className="py-2.5 px-3 font-medium text-black">ROC-AUC</th>
-                <th className="py-2.5 px-3 font-medium text-black">Duration</th>
-                <th className="py-2.5 px-3 font-medium text-black">Tag</th>
+              <tr className="border-b border-zinc-200 bg-zinc-50/80 text-zinc-500 text-[11px]">
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Run ID</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Experiment</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Algorithm</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Accuracy</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">F1</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">ROC-AUC</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Duration</th>
+                <th className="py-2.5 px-3 font-semibold text-zinc-900">Tag</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 text-[11px]">
               {experiments.map((exp) => (
-                <tr key={exp.id} className="hover:bg-zinc-50 transition-colors">
-                  <td className="py-2 px-3 font-bold text-black">{exp.id}</td>
+                <tr key={exp.id} className="hover:bg-blue-50/30 transition-colors">
+                  <td className="py-2 px-3 font-bold text-zinc-900">{exp.id}</td>
                   <td className="py-2 px-3 text-zinc-800">{exp.experimentName}</td>
                   <td className="py-2 px-3 text-zinc-500">{exp.algorithm}</td>
-                  <td className="py-2 px-3 font-bold text-black">
+                  <td className="py-2 px-3 font-bold text-emerald-600">
                     {exp.metrics.accuracy ? `${(exp.metrics.accuracy * 100).toFixed(1)}%` : '—'}
                   </td>
                   <td className="py-2 px-3 text-zinc-700">{exp.metrics.f1Score ?? '—'}</td>
-                  <td className="py-2 px-3 text-zinc-700">{exp.metrics.rocAuc ?? '—'}</td>
-                  <td className="py-2 px-3 text-zinc-400">{exp.durationSec}s</td>
-                  <td className="py-2 px-3 uppercase text-[10px] text-zinc-600">
-                    {exp.tag}
+                  <td className="py-2 px-3 text-indigo-600 font-semibold">{exp.metrics.rocAuc ?? '—'}</td>
+                  <td className="py-2 px-3 text-zinc-500">{exp.durationSec}s</td>
+                  <td className="py-2 px-3">
+                    <span
+                      className={`uppercase text-[9px] font-semibold px-1.5 py-0.5 rounded border ${
+                        exp.tag === 'Production'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : exp.tag === 'Candidate'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-zinc-100 text-zinc-700 border-zinc-200'
+                      }`}
+                    >
+                      {exp.tag}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -144,46 +154,47 @@ export const ExperimentReports: React.FC<ExperimentReportsProps> = ({
 
       {/* Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="w-full max-w-3xl bg-white border border-zinc-300 shadow-xl p-6 text-zinc-900 max-h-[90vh] flex flex-col rounded-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-3xl bg-white border border-zinc-200 shadow-2xl p-6 text-zinc-900 max-h-[90vh] flex flex-col rounded-lg">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-200 mb-4">
-              <h3 className="text-sm font-bold uppercase font-mono text-black">
-                Technical Data Audit Report
+              <h3 className="text-sm font-bold uppercase font-mono text-zinc-900 flex items-center gap-2">
+                <span>Technical Data Audit Report</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
               </h3>
 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCopyMarkdown}
-                  className="px-2.5 py-1 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+                  className="px-2.5 py-1 rounded border border-zinc-200 hover:border-zinc-300 text-zinc-700 text-xs font-mono transition-colors bg-white hover:bg-zinc-50"
                 >
-                  <FiCopy className="inline mr-1" /> Copy
+                  <FiCopy className="inline mr-1 text-zinc-500" /> Copy
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadMarkdown}
-                  className="px-2.5 py-1 bg-black text-white hover:bg-zinc-800 text-xs font-mono transition-colors"
+                  className="px-2.5 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs font-mono font-medium transition-colors shadow-xs"
                 >
                   <FiDownload className="inline mr-1" /> Download
                 </button>
                 <button
                   type="button"
                   onClick={handlePrintReport}
-                  className="px-2.5 py-1 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+                  className="px-2.5 py-1 rounded border border-zinc-200 hover:border-zinc-300 text-zinc-700 text-xs font-mono transition-colors bg-white hover:bg-zinc-50"
                 >
-                  <FiPrinter className="inline mr-1" /> Print
+                  <FiPrinter className="inline mr-1 text-zinc-500" /> Print
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowReportModal(false)}
-                  className="p-1 text-zinc-400 hover:text-black ml-1"
+                  className="p-1 rounded text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 ml-1 transition-colors"
                 >
                   <FiX className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 border border-zinc-200 font-mono text-xs text-zinc-800 leading-relaxed whitespace-pre-wrap select-all">
+            <div className="flex-1 overflow-y-auto p-4 rounded border border-zinc-200 bg-zinc-50/50 font-mono text-xs text-zinc-800 leading-relaxed whitespace-pre-wrap select-all">
               {reportMarkdown}
             </div>
           </div>

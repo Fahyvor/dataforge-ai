@@ -100,8 +100,8 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-black">Data Transformation</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Build and apply transformation recipes</p>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Data Transformation</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">Build and apply reproducible transformation recipes</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
             <button
               type="button"
               onClick={handleUndo}
-              className="px-3 py-1.5 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+              className="px-3 py-1.5 rounded border border-zinc-200 hover:border-zinc-300 text-zinc-700 hover:text-zinc-900 text-xs font-mono transition-colors bg-white"
             >
               Undo ({previousStates.length})
             </button>
@@ -118,7 +118,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
           <button
             type="button"
             onClick={handleSaveAsVersion}
-            className="px-3 py-1.5 bg-black hover:bg-zinc-800 text-white text-xs font-mono transition-colors"
+            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-colors shadow-xs"
           >
             Save Snapshot
           </button>
@@ -126,8 +126,8 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
       </div>
 
       {/* Step Builder */}
-      <div className="border border-zinc-200 p-5 space-y-4">
-        <div className="text-xs font-mono font-bold uppercase tracking-wider text-black">
+      <div className="border border-zinc-200 rounded p-5 space-y-4 bg-white">
+        <div className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-900">
           Add Transformation
         </div>
 
@@ -137,7 +137,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-zinc-300 text-xs text-black focus:outline-none focus:border-black cursor-pointer font-mono"
+              className="w-full px-2.5 py-1.5 rounded border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono bg-white"
             >
               <optgroup label="Missing Values">
                 <option value="impute_median">Impute with Column Median</option>
@@ -163,13 +163,13 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
             <label className="text-[11px] font-mono uppercase text-zinc-500 block mb-1">Target Column</label>
             <select
               disabled={selectedAction === 'drop_duplicates'}
-              value={selectedColumn}
+              value={currentTargetCol}
               onChange={(e) => setSelectedColumn(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-zinc-300 text-xs text-black focus:outline-none focus:border-black cursor-pointer disabled:opacity-30 font-mono"
+              className="w-full px-2.5 py-1.5 rounded border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono bg-white disabled:opacity-40"
             >
               {columns.map((c) => (
                 <option key={c.name} value={c.name}>
-                  {c.name} ({c.type}) {c.nullable ? '· has nulls' : ''}
+                  {c.name} ({c.type})
                 </option>
               ))}
             </select>
@@ -179,7 +179,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
             <button
               type="button"
               onClick={handleApplyStep}
-              className="w-full py-1.5 bg-black hover:bg-zinc-800 text-white text-xs font-mono font-medium transition-colors cursor-pointer"
+              className="w-full px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-colors cursor-pointer shadow-xs"
             >
               Apply Step
             </button>
@@ -190,7 +190,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
       {/* Applied Steps Ledger */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-mono">
-          <span className="font-semibold uppercase tracking-wider text-black">
+          <span className="font-semibold uppercase tracking-wider text-zinc-900">
             Transformation Ledger ({transformationHistory.length})
           </span>
           <span className="text-zinc-500">
@@ -199,23 +199,25 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
         </div>
 
         {transformationHistory.length === 0 ? (
-          <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200">
+          <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200 rounded">
             No transformations applied yet. Select an action above to start.
           </div>
         ) : (
-          <div className="border-t border-black divide-y divide-zinc-200">
+          <div className="border border-zinc-200 rounded divide-y divide-zinc-100 overflow-hidden">
             {transformationHistory.map((step, idx) => (
               <div
                 key={step.id}
-                className="py-3 flex items-center justify-between gap-4 text-xs font-mono"
+                className="p-3.5 flex items-center justify-between gap-4 text-xs font-mono hover:bg-zinc-50/60 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-zinc-400 w-5">{idx + 1}.</span>
+                  <span className="w-5 h-5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {idx + 1}
+                  </span>
                   <div>
-                    <div className="font-semibold text-black capitalize">
+                    <div className="font-semibold text-zinc-900 capitalize">
                       {step.action.replace(/_/g, ' ')}
                     </div>
-                    <div className="text-[11px] text-zinc-500">{step.impactNote}</div>
+                    <div className="text-[11px] text-emerald-600 mt-0.5">{step.impactNote}</div>
                   </div>
                 </div>
 

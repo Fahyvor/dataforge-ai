@@ -146,7 +146,7 @@ export function App() {
         <Route
           path="/*"
           element={
-            <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-black selection:text-white">
+            <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
               <Header
                 user={user}
                 datasets={datasets}

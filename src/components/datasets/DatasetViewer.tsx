@@ -53,11 +53,11 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
       <div className="border-b border-zinc-200 pb-5 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-black">{dataset.name}</h1>
-            <span className="text-[11px] font-mono px-1.5 py-0.5 border border-zinc-300 text-zinc-700 uppercase">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900">{dataset.name}</h1>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 font-medium uppercase">
               {dataset.format}
             </span>
-            <span className="text-[11px] font-mono text-zinc-400">
+            <span className="text-[11px] font-mono text-zinc-500">
               {dataset.currentVersion}
             </span>
           </div>
@@ -66,30 +66,32 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
 
         <div className="flex items-center gap-4 text-xs font-mono">
           <div>
-            <span className="text-zinc-400">Rows:</span>{' '}
-            <span className="font-bold text-black">{dataset.rowCount}</span>
+            <span className="text-zinc-500">Rows:</span>{' '}
+            <span className="font-bold text-zinc-900">{dataset.rowCount}</span>
           </div>
           <div>
-            <span className="text-zinc-400">Columns:</span>{' '}
-            <span className="font-bold text-black">{dataset.columnCount}</span>
+            <span className="text-zinc-500">Columns:</span>{' '}
+            <span className="font-bold text-blue-600">{dataset.columnCount}</span>
           </div>
           <div>
-            <span className="text-zinc-400">Quality:</span>{' '}
-            <span className="font-bold text-black">{dataset.qualityScore}%</span>
+            <span className="text-zinc-500">Quality:</span>{' '}
+            <span className={`font-bold ${dataset.qualityScore >= 90 ? 'text-emerald-600' : dataset.qualityScore >= 75 ? 'text-amber-600' : 'text-rose-600'}`}>
+              {dataset.qualityScore}%
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-200">
             <button
               type="button"
               onClick={handleExportCsv}
-              className="px-2.5 py-1 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+              className="px-2.5 py-1 border border-zinc-200 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 text-zinc-700 text-xs font-mono transition-colors"
             >
               CSV
             </button>
             <button
               type="button"
               onClick={handleExportJson}
-              className="px-2.5 py-1 border border-zinc-300 hover:border-black text-black text-xs font-mono transition-colors"
+              className="px-2.5 py-1 border border-zinc-200 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/50 text-zinc-700 text-xs font-mono transition-colors"
             >
               JSON
             </button>
@@ -99,15 +101,15 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
 
       {/* Schema Columns */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider shrink-0">Schema:</span>
+        <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-wider shrink-0 font-medium">Schema:</span>
         {dataset.columns.map((col) => (
           <div
             key={col.name}
-            className="flex items-center gap-1 px-2 py-0.5 border border-zinc-200 text-[11px] shrink-0 font-mono text-zinc-700"
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-zinc-200 bg-zinc-50/70 hover:border-blue-300 text-[11px] shrink-0 font-mono transition-colors"
           >
-            <span className="font-medium text-black">{col.name}</span>
-            <span className="text-zinc-400">({col.type})</span>
-            {col.nullable && <span className="text-zinc-400">*</span>}
+            <span className="font-medium text-zinc-900">{col.name}</span>
+            <span className="text-blue-600 text-[10px] font-semibold">{col.type}</span>
+            {col.nullable && <span className="text-amber-500 font-bold" title="Nullable">*</span>}
           </div>
         ))}
       </div>
@@ -125,7 +127,7 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-8 pr-3 py-1.5 border border-zinc-300 text-xs text-black placeholder-zinc-400 focus:outline-none focus:border-black"
+              className="w-full pl-8 pr-3 py-1.5 rounded border border-zinc-200 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
             />
           </div>
 
@@ -135,7 +137,7 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
               setSelectedColumnFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="border border-zinc-300 text-zinc-700 text-xs px-2 py-1.5 focus:outline-none focus:border-black cursor-pointer font-mono"
+            className="rounded border border-zinc-200 text-zinc-700 text-xs px-2.5 py-1.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer font-mono bg-white"
           >
             <option value="ALL">All Columns</option>
             {dataset.columns.map((c) => (
@@ -155,18 +157,18 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-2 py-1 border border-zinc-300 hover:border-black disabled:opacity-30 cursor-pointer text-black"
+              className="px-2 py-1 rounded border border-zinc-200 hover:border-blue-500 hover:text-blue-600 disabled:opacity-30 disabled:hover:border-zinc-200 disabled:hover:text-zinc-400 cursor-pointer text-zinc-700 transition-colors"
             >
               Prev
             </button>
-            <span className="px-1 text-black">
+            <span className="px-1 text-zinc-900 font-medium">
               {currentPage} / {totalPages}
             </span>
             <button
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              className="px-2 py-1 border border-zinc-300 hover:border-black disabled:opacity-30 cursor-pointer text-black"
+              className="px-2 py-1 rounded border border-zinc-200 hover:border-blue-500 hover:text-blue-600 disabled:opacity-30 disabled:hover:border-zinc-200 disabled:hover:text-zinc-400 cursor-pointer text-zinc-700 transition-colors"
             >
               Next
             </button>
@@ -175,13 +177,13 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
       </div>
 
       {/* Ruled Data Table */}
-      <div className="border-t border-black overflow-x-auto">
+      <div className="border border-zinc-200 rounded overflow-hidden overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-zinc-200 text-zinc-500 font-mono text-[11px]">
+            <tr className="border-b border-zinc-200 bg-zinc-50/80 text-zinc-500 font-mono text-[11px]">
               <th className="py-2.5 px-3 font-normal text-zinc-400 w-10 text-center">#</th>
               {dataset.columns.map((col) => (
-                <th key={col.name} className="py-2.5 px-3 font-medium text-black whitespace-nowrap">
+                <th key={col.name} className="py-2.5 px-3 font-semibold text-zinc-800 whitespace-nowrap">
                   <span>{col.name}</span>
                 </th>
               ))}
@@ -189,7 +191,7 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
           </thead>
           <tbody className="divide-y divide-zinc-100 font-mono text-[11px]">
             {paginatedRows.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-zinc-50 transition-colors">
+              <tr key={rIdx} className="hover:bg-blue-50/30 transition-colors">
                 <td className="py-2 px-3 text-zinc-400 text-center text-[10px]">
                   {(currentPage - 1) * pageSize + rIdx + 1}
                 </td>
@@ -199,11 +201,15 @@ export const DatasetViewer: React.FC<DatasetViewerProps> = ({ dataset, onNavigat
                   return (
                     <td
                       key={col.name}
-                      className={`py-2 px-3 whitespace-nowrap ${
-                        isNull ? 'text-zinc-400 italic' : 'text-zinc-800'
-                      }`}
+                      className="py-2 px-3 whitespace-nowrap"
                     >
-                      {isNull ? 'null' : String(val)}
+                      {isNull ? (
+                        <span className="text-amber-600 bg-amber-50 px-1 py-0.5 rounded text-[10px] font-mono italic">
+                          null
+                        </span>
+                      ) : (
+                        <span className="text-zinc-800">{String(val)}</span>
+                      )}
                     </td>
                   );
                 })}
