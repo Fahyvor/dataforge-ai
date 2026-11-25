@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sleek-toast';
 import { Dataset, TransformationStep } from '../../types';
-import { applyTransformation } from '../../utils/dataEngine';
+import { api } from '../../services/api';
 
 interface DataCleaningProps {
   dataset: Dataset | null;
@@ -12,12 +13,21 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
   const [selectedAction, setSelectedAction] = useState<string>('impute_median');
   const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [transformationHistory, setTransformationHistory] = useState<TransformationStep[]>([]);
-  const [previousStates, setPreviousStates] = useState<Dataset[]>([]);
+  const [undoCount, setUndoCount] = useState<number>(0);
+  const [isApplying, setIsApplying] = useState(false);
 
   if (!dataset) {
     return (
-      <div className="py-20 text-center text-xs text-zinc-500">
-        Select a dataset to build cleaning and transformation recipes.
+      <div className="py-20 text-center space-y-3">
+        <p className="text-xs font-mono text-zinc-500">
+          Select or upload a dataset to build cleaning and transformation recipes.
+        </p>
+        <Link
+          to="/upload"
+          className="inline-block px-3.5 py-1.5 rounded bg-blue-600 text-white text-xs font-mono hover:bg-blue-700"
+        >
+          Upload Dataset
+        </Link>
       </div>
     );
   }
@@ -25,100 +35,90 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
   const columns = dataset.columns;
   const currentTargetCol = selectedColumn || columns[0]?.name || '';
 
-  const handleApplyStep = () => {
-    const step: TransformationStep = {
-      id: `step-${Date.now().toString(36)}`,
-      action: selectedAction as any,
-      column: selectedAction === 'drop_duplicates' ? undefined : currentTargetCol,
-      description: `${selectedAction.replace(/_/g, ' ')} on ${selectedAction === 'drop_duplicates' ? 'all rows' : currentTargetCol}`,
-      appliedAt: new Date().toISOString(),
-      impactNote: '',
-    };
-
-    setPreviousStates([...previousStates, JSON.parse(JSON.stringify(dataset))]);
-
-    const { updatedRows, updatedColumns, impactNote } = applyTransformation(
-      dataset.rows,
-      dataset.columns,
-      step
-    );
-
-    step.impactNote = impactNote;
-    const updatedHistory = [...transformationHistory, step];
-    setTransformationHistory(updatedHistory);
-
-    const updatedDataset: Dataset = {
-      ...dataset,
-      rowCount: updatedRows.length,
-      columnCount: updatedColumns.length,
-      rows: updatedRows,
-      columns: updatedColumns,
-      updatedAt: new Date().toISOString(),
-    };
-
-    onUpdateDataset(updatedDataset);
-    toast.success(impactNote || 'Transformation applied');
+  const handleApplyStep = async () => {
+    setIsApplying(true);
+    try {
+      const res = await api.datasets.transform(
+        dataset.id,
+        selectedAction,
+        selectedAction === 'drop_duplicates' ? undefined : currentTargetCol
+      );
+      setTransformationHistory([res.step, ...transformationHistory]);
+      setUndoCount(res.undoCount);
+      onUpdateDataset(res.dataset);
+      toast.success(res.step.impactNote || 'Transformation applied');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to apply transformation');
+    } finally {
+      setIsApplying(false);
+    }
   };
 
-  const handleUndo = () => {
-    if (previousStates.length === 0) return;
-    const prevState = previousStates[previousStates.length - 1];
-    setPreviousStates(previousStates.slice(0, -1));
-    setTransformationHistory(transformationHistory.slice(0, -1));
-    onUpdateDataset(prevState);
-    toast.info('Reverted transformation');
+  const handleUndo = async () => {
+    if (undoCount === 0) return;
+    setIsApplying(true);
+    try {
+      const res = await api.datasets.undo(dataset.id);
+      setUndoCount(res.undoCount);
+      setTransformationHistory(transformationHistory.slice(1));
+      onUpdateDataset(res.dataset);
+      toast.info('Reverted transformation');
+    } catch (err: any) {
+      toast.error(err.message || 'Undo failed');
+    } finally {
+      setIsApplying(false);
+    }
   };
 
-  const handleSaveAsVersion = () => {
-    const nextVerTag = `v1.${dataset.versions.length}`;
-    const newVersion = {
-      versionId: `ver-${Date.now().toString(36)}`,
-      versionTag: nextVerTag,
-      description: `Applied ${transformationHistory.length} transformation steps: ${transformationHistory.map((s) => s.action).join(', ')}`,
-      author: 'Engineer',
-      createdAt: new Date().toISOString(),
-      rowCount: dataset.rowCount,
-      columnCount: dataset.columnCount,
-      qualityScore: Math.min(100, dataset.qualityScore + 4),
-      dataHash: `sha256:${Date.now().toString(16)}`,
-      changesSummary: transformationHistory.map((s) => s.impactNote),
-    };
-
-    const updatedDataset: Dataset = {
-      ...dataset,
-      currentVersion: nextVerTag,
-      versions: [newVersion, ...dataset.versions],
-      qualityScore: Math.min(100, dataset.qualityScore + 4),
-    };
-
-    onUpdateDataset(updatedDataset);
-    toast.success(`Saved snapshot ${nextVerTag}`);
+  const handleSaveAsVersion = async () => {
+    setIsApplying(true);
+    try {
+      const summary =
+        transformationHistory.length > 0
+          ? transformationHistory.map((s) => s.impactNote)
+          : ['Manual version snapshot'];
+      const description =
+        transformationHistory.length > 0
+          ? `Applied ${transformationHistory.length} steps: ${transformationHistory.map((s) => s.action).join(', ')}`
+          : `Snapshot at ${dataset.rowCount} rows`;
+      const res = await api.datasets.saveVersion(dataset.id, description, summary);
+      onUpdateDataset(res.dataset);
+      toast.success(`Saved snapshot ${res.version.versionTag}`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save snapshot');
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 w-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-zinc-900">Data Transformation</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Build and apply reproducible transformation recipes</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Execute schema and value transformations on {dataset.name}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {previousStates.length > 0 && (
+          {undoCount > 0 && (
             <button
               type="button"
+              disabled={isApplying}
               onClick={handleUndo}
-              className="px-3 py-1.5 rounded border border-zinc-200 hover:border-zinc-300 text-zinc-700 hover:text-zinc-900 text-xs font-mono transition-colors bg-white"
+              className="px-3 py-1.5 rounded border border-zinc-200 hover:border-zinc-300 text-zinc-700 hover:text-zinc-900 text-xs font-mono transition-colors bg-white cursor-pointer"
             >
-              Undo ({previousStates.length})
+              Undo ({undoCount})
             </button>
           )}
 
           <button
             type="button"
+            disabled={isApplying}
             onClick={handleSaveAsVersion}
-            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-colors shadow-xs"
+            className="px-3.5 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-colors shadow-xs cursor-pointer"
           >
             Save Snapshot
           </button>
@@ -160,7 +160,9 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase text-zinc-500 block mb-1">Target Column</label>
+            <label className="text-[11px] font-mono uppercase text-zinc-500 block mb-1">
+              Target Column
+            </label>
             <select
               disabled={selectedAction === 'drop_duplicates'}
               value={currentTargetCol}
@@ -178,10 +180,11 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
           <div className="flex items-end">
             <button
               type="button"
+              disabled={isApplying}
               onClick={handleApplyStep}
-              className="w-full px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-colors cursor-pointer shadow-xs"
+              className="w-full px-4 py-1.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-mono font-medium transition-colors cursor-pointer shadow-xs"
             >
-              Apply Step
+              {isApplying ? 'Applying...' : 'Apply Step'}
             </button>
           </div>
         </div>
@@ -191,7 +194,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs font-mono">
           <span className="font-semibold uppercase tracking-wider text-zinc-900">
-            Transformation Ledger ({transformationHistory.length})
+            Session Transformation Ledger ({transformationHistory.length})
           </span>
           <span className="text-zinc-500">
             Shape: {dataset.rowCount} rows × {dataset.columnCount} cols
@@ -200,7 +203,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
 
         {transformationHistory.length === 0 ? (
           <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200 rounded">
-            No transformations applied yet. Select an action above to start.
+            No transformations executed in this session yet.
           </div>
         ) : (
           <div className="border border-zinc-200 rounded divide-y divide-zinc-100 overflow-hidden">
@@ -211,7 +214,7 @@ export const DataCleaning: React.FC<DataCleaningProps> = ({ dataset, onUpdateDat
               >
                 <div className="flex items-center gap-3">
                   <span className="w-5 h-5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                    {idx + 1}
+                    {transformationHistory.length - idx}
                   </span>
                   <div>
                     <div className="font-semibold text-zinc-900 capitalize">

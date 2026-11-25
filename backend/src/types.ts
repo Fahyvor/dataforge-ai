@@ -10,8 +10,14 @@ export interface User {
   avatarUrl?: string;
 }
 
+export interface StoredUser extends User {
+  passwordHash: string;
+  salt: string;
+}
+
 export interface ApiKey {
   id: string;
+  userId?: string;
   name: string;
   keyPreview: string;
   fullKey?: string;
@@ -90,6 +96,61 @@ export interface TransformationStep {
   impactNote: string;
 }
 
+export interface ColumnStat {
+  column: string;
+  type: string;
+  count: number;
+  missingCount: number;
+  missingPercentage: number;
+  distinctCount: number;
+  mean?: number;
+  median?: number;
+  stdDev?: number;
+  min?: number;
+  q25?: number;
+  q75?: number;
+  max?: number;
+  skewness?: number;
+  topCategories?: { value: string; count: number; percentage: number }[];
+}
+
+export interface CorrelationCell {
+  colA: string;
+  colB: string;
+  coefficient: number;
+}
+
+export interface EdaReport {
+  datasetId: string;
+  summaryStats: ColumnStat[];
+  correlations: CorrelationCell[];
+  executiveSummary: string;
+  keyFindings: string[];
+  recommendedActions: string[];
+}
+
+export interface DataDriftMetric {
+  feature: string;
+  psiScore: number;
+  status: 'stable' | 'moderate_drift' | 'critical_drift';
+  baselineMean: number;
+  currentMean: number;
+  pValue: number;
+}
+
+export interface AnalyticsSummary {
+  datasetId: string;
+  rowCount: number;
+  columnCount: number;
+  qualityScore: number;
+  completenessPct: number;
+  throughputRecsPerSec: number;
+  segmentLabel: string;
+  segments: { name: string; count: number; percentage: number }[];
+  batchHealth: { label: string; score: number }[];
+  schemaBreakdown: { type: string; count: number }[];
+}
+
 export interface PipelineStepNode {
   id: string;
   name: string;
@@ -117,6 +178,7 @@ export interface Pipeline {
   lastRunDurationSec?: number;
   throughputRecsPerSec?: number;
   datasetId: string;
+  targetName?: string;
   logs: PipelineExecutionLog[];
 }
 
@@ -135,13 +197,12 @@ export interface WarehouseConnection {
 
 export interface WarehouseTable {
   id: string;
-  connectionId: string;
-  name: string;
-  schema: string;
+  tableName: string;
+  datasetName: string;
   rowCount: number;
-  sizeMb: number;
-  columns: { name: string; type: string; isPrimary: boolean; isNullable: boolean }[];
-  lastSyncedAt: string;
+  sizeBytes: number;
+  columns: { name: string; type: string; nullable: boolean }[];
+  updatedAt: string;
 }
 
 export interface SqlQueryResult {

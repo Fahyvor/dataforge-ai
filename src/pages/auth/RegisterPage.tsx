@@ -1,37 +1,44 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'sleek-toast';
 import { useAuth } from '../../context/AuthContext';
-import { User, UserRole } from '../../types';
+import { UserRole } from '../../types';
 
 export const RegisterPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [organization, setOrganization] = useState('');
-  const [role, setRole] = useState<UserRole>('ML Engineer');
-  const { login } = useAuth();
+  const [role, setRole] = useState<UserRole>('Data Engineer');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { registerUser } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) {
+    if (!name.trim() || !email.trim() || !password) {
       toast.warning('Please complete all required fields');
       return;
     }
 
-    const newUser: User = {
-      id: `usr-${Date.now().toString(36)}`,
-      name,
-      email,
-      organization: organization || 'DataForge Engineering Lab',
-      role,
-      createdAt: new Date().toISOString(),
-    };
-
-    login(newUser);
-    toast.success('Account created successfully');
-    navigate('/');
+    setIsSubmitting(true);
+    try {
+      await registerUser({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        organization: organization.trim() || undefined,
+        role,
+      });
+      toast.success('Account created successfully');
+      navigate('/');
+    } catch (err: any) {
+      toast.error(err.message || 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,7 +77,7 @@ export const RegisterPage: React.FC = () => {
             <input
               type="text"
               required
-              placeholder="Jordan Hayes"
+              placeholder="Your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg transition-colors"
@@ -95,14 +102,24 @@ export const RegisterPage: React.FC = () => {
             <label className="text-[11px] font-mono uppercase text-zinc-500 mb-1.5 block">
               Password
             </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-3 pr-9 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-blue-600 transition-colors cursor-pointer p-0.5"
+              >
+                {showPassword ? <FiEyeOff className="w-3.5 h-3.5" /> : <FiEye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -136,9 +153,10 @@ export const RegisterPage: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-lg shadow-xs mt-2"
+            disabled={isSubmitting}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-lg shadow-xs mt-2"
           >
-            Register Account
+            {isSubmitting ? 'Creating Account...' : 'Register Account'}
           </button>
         </form>
 

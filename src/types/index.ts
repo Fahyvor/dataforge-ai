@@ -131,6 +131,7 @@ export interface Pipeline {
   lastRunDurationSec?: number;
   throughputRecsPerSec?: number;
   datasetId: string;
+  targetName?: string;
   logs: PipelineExecutionLog[];
 }
 
@@ -149,13 +150,12 @@ export interface WarehouseConnection {
 
 export interface WarehouseTable {
   id: string;
-  connectionId: string;
-  name: string;
-  schema: string;
+  tableName: string;
+  datasetName: string;
   rowCount: number;
-  sizeMb: number;
-  columns: { name: string; type: string; isPrimary: boolean; isNullable: boolean }[];
-  lastSyncedAt: string;
+  sizeBytes: number;
+  columns: { name: string; type: string; nullable: boolean }[];
+  updatedAt: string;
 }
 
 export interface SqlQueryResult {
@@ -196,9 +196,38 @@ export interface EdaReport {
   datasetId: string;
   summaryStats: ColumnStat[];
   correlations: CorrelationCell[];
-  aiExecutiveSummary: string;
+  executiveSummary: string;
   keyFindings: string[];
   recommendedActions: string[];
+}
+
+export interface AnalyticsSummary {
+  datasetId: string;
+  rowCount: number;
+  columnCount: number;
+  qualityScore: number;
+  completenessPct: number;
+  throughputRecsPerSec: number;
+  segmentLabel: string;
+  segments: { name: string; count: number; percentage: number }[];
+  batchHealth: { label: string; score: number }[];
+  schemaBreakdown: { type: string; count: number }[];
+}
+
+export interface HealthResponse {
+  status: string;
+  platform: string;
+  version: string;
+  description: string;
+  counts: {
+    datasets: number;
+    models: number;
+    pipelines: number;
+    connections: number;
+    experiments: number;
+    users: number;
+  };
+  timestamp: string;
 }
 
 export type MlTaskType = 'classification' | 'regression' | 'clustering' | 'anomaly_detection';

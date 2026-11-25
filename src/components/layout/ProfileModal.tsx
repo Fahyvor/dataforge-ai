@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { FiX, FiCopy, FiTrash2, FiPlus } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiX, FiCopy, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'sleek-toast';
 import { ApiKey, User, UserRole } from '../../types';
+import { api } from '../../services/api';
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
-  onUpdateRole: (role: UserRole) => void;
+  onUpdateRole: (role: UserRole) => Promise<void>;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -16,53 +17,39 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   user,
   onUpdateRole,
 }) => {
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: 'key-1',
-      name: 'Airflow Orchestrator',
-      keyPreview: 'df_live_9a4f••••••••••••3d82',
-      scope: 'write',
-      createdAt: '2026-11-10T08:00:00Z',
-      lastUsedAt: '2026-11-20T12:40:00Z',
-    },
-    {
-      id: 'key-2',
-      name: 'Metrics Exporter',
-      keyPreview: 'df_live_3c7b••••••••••••8e11',
-      scope: 'ml_deploy',
-      createdAt: '2026-11-14T14:20:00Z',
-      lastUsedAt: '2026-11-20T16:15:00Z',
-    },
-  ]);
-
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
   const [newKeyScope, setNewKeyScope] = useState<ApiKey['scope']>('write');
   const [generatedSecret, setGeneratedSecret] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsLoadingKeys(true);
+    api.keys
+      .list()
+      .then((res) => setApiKeys(res.keys))
+      .catch((err) => toast.error(err.message || 'Failed to load API keys'))
+      .finally(() => setIsLoadingKeys(false));
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleCreateKey = () => {
+  const handleCreateKey = async () => {
     if (!newKeyName.trim()) {
       toast.warning('Please provide a key name');
       return;
     }
 
-    const randomSuffix = Math.random().toString(36).substring(2, 10);
-    const fullKey = `df_live_${Date.now()}_${randomSuffix}`;
-    const newKey: ApiKey = {
-      id: `key-${Date.now()}`,
-      name: newKeyName,
-      keyPreview: `df_live_${newKeyName.substring(0, 3)}••••••••${randomSuffix}`,
-      fullKey,
-      scope: newKeyScope,
-      createdAt: new Date().toISOString(),
-      lastUsedAt: null,
-    };
-
-    setApiKeys([newKey, ...apiKeys]);
-    setGeneratedSecret(fullKey);
-    setNewKeyName('');
-    toast.success('Generated new API Key');
+    try {
+      const res = await api.keys.create({ name: newKeyName.trim(), scope: newKeyScope });
+      setApiKeys([res.key, ...apiKeys]);
+      setGeneratedSecret(res.key.fullKey || null);
+      setNewKeyName('');
+      toast.success('Generated new API Key');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create API key');
+    }
   };
 
   const handleCopyKey = (keyString: string) => {
@@ -70,9 +57,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     toast.success('API Key copied');
   };
 
-  const handleRevokeKey = (id: string) => {
-    setApiKeys(apiKeys.filter((k) => k.id !== id));
-    toast.info('API Key revoked');
+  const handleRevokeKey = async (id: string) => {
+    try {
+      await api.keys.revoke(id);
+      setApiKeys(apiKeys.filter((k) => k.id !== id));
+      toast.info('API Key revoked');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to revoke key');
+    }
   };
 
   return (
@@ -123,12 +115,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         {/* API Keys section */}
         <div className="space-y-3">
           <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 font-mono">
-            API Keys
+            API Keys ({apiKeys.length})
           </h4>
 
           {generatedSecret && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 text-xs space-y-1 rounded-lg">
-              <div className="font-medium text-emerald-800 text-[11px]">Save new key:</div>
+              <div className="font-medium text-emerald-800 text-[11px]">Save new key now:</div>
               <div className="flex items-center gap-2 bg-white p-2 border border-emerald-200 font-mono text-[11px] justify-between rounded">
                 <span className="truncate text-emerald-900">{generatedSecret}</span>
                 <button
@@ -170,41 +162,49 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           <div className="space-y-2 pt-1">
-            {apiKeys.map((key) => (
-              <div
-                key={key.id}
-                className="p-3 border border-zinc-200 hover:border-zinc-300 bg-white flex items-center justify-between text-xs rounded-lg transition-colors"
-              >
-                <div>
-                  <div className="font-medium text-zinc-900 flex items-center gap-2">
-                    <span>{key.name}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                      {key.scope}
-                    </span>
-                  </div>
-                  <div className="font-mono text-[11px] text-zinc-400">{key.keyPreview}</div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyKey(key.keyPreview)}
-                    className="p-1 text-zinc-400 hover:text-blue-600 transition-colors"
-                    title="Copy"
-                  >
-                    <FiCopy className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRevokeKey(key.id)}
-                    className="p-1 text-zinc-400 hover:text-rose-600 transition-colors"
-                    title="Revoke"
-                  >
-                    <FiTrash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+            {isLoadingKeys ? (
+              <div className="py-4 text-center text-xs font-mono text-zinc-400">Loading keys...</div>
+            ) : apiKeys.length === 0 ? (
+              <div className="py-4 text-center text-xs font-mono text-zinc-400 border border-zinc-200 rounded-lg">
+                No API keys generated yet.
               </div>
-            ))}
+            ) : (
+              apiKeys.map((key) => (
+                <div
+                  key={key.id}
+                  className="p-3 border border-zinc-200 hover:border-zinc-300 bg-white flex items-center justify-between text-xs rounded-lg transition-colors"
+                >
+                  <div>
+                    <div className="font-medium text-zinc-900 flex items-center gap-2">
+                      <span>{key.name}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        {key.scope}
+                      </span>
+                    </div>
+                    <div className="font-mono text-[11px] text-zinc-400">{key.keyPreview}</div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyKey(key.keyPreview)}
+                      className="p-1 text-zinc-400 hover:text-blue-600 transition-colors"
+                      title="Copy preview"
+                    >
+                      <FiCopy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeKey(key.id)}
+                      className="p-1 text-zinc-400 hover:text-rose-600 transition-colors"
+                      title="Revoke"
+                    >
+                      <FiTrash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

@@ -48,8 +48,8 @@ export function generateMarkdownReport(
   md += `**Data Integrity Score:** ${dataset.qualityScore}/100  \n\n`;
 
   md += `## 1. Executive Summary\n\n`;
-  if (eda?.aiExecutiveSummary) {
-    md += `${eda.aiExecutiveSummary}\n\n`;
+  if (eda?.executiveSummary) {
+    md += `${eda.executiveSummary}\n\n`;
   } else {
     md += `Comprehensive evaluation of '${dataset.name}' completed across data validation, schema enforcement, exploratory statistics, and predictive modeling pipelines.\n\n`;
   }

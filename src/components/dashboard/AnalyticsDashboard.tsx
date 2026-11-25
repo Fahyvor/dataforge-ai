@@ -1,71 +1,82 @@
-import React, { useState } from 'react';
-import { Dataset } from '../../types';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sleek-toast';
+import { AnalyticsSummary, Dataset } from '../../types';
+import { api } from '../../services/api';
 
 interface AnalyticsDashboardProps {
   dataset: Dataset | null;
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ dataset }) => {
-  const [timeRange, setTimeRange] = useState<'7D' | '30D' | '90D' | '1Y'>('30D');
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!dataset) {
+      setAnalytics(null);
+      return;
+    }
+
+    setIsLoading(true);
+    api.datasets
+      .analytics(dataset.id)
+      .then((res) => setAnalytics(res.analytics))
+      .catch((err) => toast.error(err.message || 'Failed to compute analytics'))
+      .finally(() => setIsLoading(false));
+  }, [dataset?.id, dataset?.updatedAt]);
 
   if (!dataset) {
     return (
-      <div className="py-20 text-center text-xs text-zinc-500">
-        Select a dataset to view analytics.
+      <div className="py-20 text-center space-y-3">
+        <p className="text-xs font-mono text-zinc-500">
+          Upload or select a dataset to inspect telemetry analytics.
+        </p>
+        <Link
+          to="/upload"
+          className="inline-block px-3.5 py-1.5 rounded bg-blue-600 text-white text-xs font-mono hover:bg-blue-700"
+        >
+          Upload Dataset
+        </Link>
       </div>
     );
   }
 
-  const catCounts: Record<string, number> = {};
-  dataset.rows.forEach((r) => {
-    const tier = r.SubscriptionTier || r.HomeOwnership || r.TurbineID || 'Segment A';
-    catCounts[tier] = (catCounts[tier] || 0) + 1;
-  });
+  if (isLoading && !analytics) {
+    return (
+      <div className="py-20 text-center text-xs font-mono text-zinc-400">
+        Aggregating real dataset distributions...
+      </div>
+    );
+  }
 
-  const categories = Object.entries(catCounts);
-  const maxCategoryCount = Math.max(...categories.map((c) => c[1]), 1);
+  if (!analytics) return null;
 
-  const timeSeriesPoints = [
-    { label: 'Nov 01', val: 78 },
-    { label: 'Nov 05', val: 82 },
-    { label: 'Nov 10', val: 89 },
-    { label: 'Nov 14', val: 85 },
-    { label: 'Nov 17', val: 92 },
-    { label: 'Nov 20', val: 96 },
-  ];
+  const maxSegmentCount = Math.max(...analytics.segments.map((s) => s.count), 1);
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 w-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-200 pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Analytics & Ingestion</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Real-time throughput metrics and distribution telemetry</p>
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900">Analytics Overview</h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Live dataset partition completeness and empirical feature distribution for {dataset.name}
+          </p>
         </div>
 
-        <div className="flex items-center gap-1 text-xs font-mono">
-          {(['7D', '30D', '90D', '1Y'] as const).map((range) => (
-            <button
-              key={range}
-              type="button"
-              onClick={() => setTimeRange(range)}
-              className={`px-3 py-1 rounded transition-colors ${
-                timeRange === range
-                  ? 'bg-blue-600 text-white font-medium shadow-xs'
-                  : 'border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:text-zinc-900 bg-white'
-              }`}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
+        <span className="text-[11px] font-mono px-2.5 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700">
+          {dataset.currentVersion}
+        </span>
       </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 border-b border-zinc-200 pb-6">
         <div>
           <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Total Rows</div>
-          <div className="text-2xl font-bold font-mono text-zinc-900 mt-1">{dataset.rowCount.toLocaleString()}</div>
+          <div className="text-2xl font-bold font-mono text-zinc-900 mt-1">
+            {analytics.rowCount.toLocaleString()}
+          </div>
         </div>
 
         <div>
@@ -73,58 +84,74 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ dataset 
             Quality Score
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </div>
-          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">{dataset.qualityScore}%</div>
+          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
+            {analytics.qualityScore}%
+          </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Schema Columns</div>
-          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">{dataset.columnCount}</div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Completeness</div>
+          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">
+            {analytics.completenessPct}%
+          </div>
         </div>
 
         <div>
-          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Throughput</div>
-          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">1.45k <span className="text-xs font-normal text-zinc-500">recs/s</span></div>
+          <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">
+            Pipeline Throughput
+          </div>
+          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">
+            {analytics.throughputRecsPerSec > 0 ? (
+              <>
+                {analytics.throughputRecsPerSec.toLocaleString()}{' '}
+                <span className="text-xs font-normal text-zinc-500">recs/s</span>
+              </>
+            ) : (
+              <span className="text-sm font-normal text-zinc-400">No runs yet</span>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Time Series */}
+        {/* Partition Completeness */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
-              Ingestion Trend ({timeRange})
+              Partition Completeness
             </div>
             <span className="text-[10px] font-mono text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-              Avg +9.4%
+              {analytics.batchHealth.length} Slices
             </span>
           </div>
 
           <div className="h-44 w-full flex items-end justify-between pt-4 pb-1 border-b border-zinc-200">
-            {timeSeriesPoints.map((pt, idx) => (
+            {analytics.batchHealth.map((pt, idx) => (
               <div key={idx} className="flex flex-col items-center gap-1.5 flex-1 h-full justify-end group">
                 <span className="text-[10px] font-mono text-blue-600 opacity-80 group-hover:opacity-100 font-medium transition-opacity">
-                  {pt.val}%
+                  {pt.score}%
                 </span>
                 <div
-                  style={{ height: `${pt.val}%` }}
+                  style={{ height: `${Math.max(4, pt.score)}%` }}
                   className="w-5 bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t group-hover:from-blue-500 group-hover:to-indigo-400 transition-all"
                 />
-                <span className="text-[9px] text-zinc-500 font-mono mt-1">{pt.label}</span>
+                <span className="text-[9px] text-zinc-500 font-mono mt-1 truncate max-w-[64px]">
+                  {pt.label}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Category Breakdown */}
+        {/* Category / Schema Distribution */}
         <div className="space-y-4">
           <div className="text-xs font-mono uppercase tracking-wider text-zinc-900 font-semibold">
-            Segment Distribution
+            {analytics.segmentLabel}
           </div>
 
           <div className="space-y-3 pt-2">
-            {categories.slice(0, 5).map(([cat, count], idx) => {
-              const pct = Math.round((count / dataset.rowCount) * 100);
+            {analytics.segments.map((seg, idx) => {
               const palette = [
                 'bg-blue-600',
                 'bg-indigo-600',
@@ -134,14 +161,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ dataset 
               ];
               const barColor = palette[idx % palette.length];
               return (
-                <div key={cat} className="space-y-1 text-xs">
+                <div key={seg.name} className="space-y-1 text-xs">
                   <div className="flex items-center justify-between font-mono">
-                    <span className="text-zinc-700">{cat}</span>
-                    <span className="font-semibold text-zinc-900">{count} ({pct}%)</span>
+                    <span className="text-zinc-700 truncate max-w-[200px]">{seg.name}</span>
+                    <span className="font-semibold text-zinc-900">
+                      {seg.count} ({seg.percentage}%)
+                    </span>
                   </div>
                   <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
                     <div
-                      style={{ width: `${(count / maxCategoryCount) * 100}%` }}
+                      style={{ width: `${(seg.count / maxSegmentCount) * 100}%` }}
                       className={`h-full ${barColor} rounded-full transition-all`}
                     />
                   </div>

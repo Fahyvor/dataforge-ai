@@ -1,54 +1,93 @@
-import React, { useMemo } from 'react';
-import { Dataset } from '../../types';
-import { calculateDrift, validateDataset } from '../../utils/dataEngine';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'sleek-toast';
+import { DataDriftMetric, Dataset, ValidationResult } from '../../types';
+import { api } from '../../services/api';
 
 interface QualityMonitoringProps {
   dataset: Dataset | null;
 }
 
 export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset }) => {
-  const qualityData = useMemo(() => {
-    if (!dataset) return null;
-    const validation = validateDataset(dataset.id, dataset.rows, dataset.columns);
-    const baseline = dataset.rows.slice(0, Math.floor(dataset.rows.length / 2));
-    const current = dataset.rows.slice(Math.floor(dataset.rows.length / 2));
-    const drift = calculateDrift(baseline, current, dataset.columns);
-    return { validation, drift };
-  }, [dataset]);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [drift, setDrift] = useState<DataDriftMetric[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (!dataset || !qualityData) {
+  useEffect(() => {
+    if (!dataset) {
+      setValidation(null);
+      setDrift([]);
+      return;
+    }
+
+    setIsLoading(true);
+    api.datasets
+      .drift(dataset.id)
+      .then((res) => {
+        setValidation(res.validation);
+        setDrift(res.drift);
+      })
+      .catch((err) => toast.error(err.message || 'Failed to compute quality drift metrics'))
+      .finally(() => setIsLoading(false));
+  }, [dataset?.id, dataset?.updatedAt]);
+
+  if (!dataset) {
     return (
-      <div className="py-20 text-center text-xs text-zinc-500">
-        Select a dataset to view quality and drift monitoring.
+      <div className="py-20 text-center space-y-3">
+        <p className="text-xs font-mono text-zinc-500">
+          Select or upload a dataset to monitor drift and version lineage.
+        </p>
+        <Link
+          to="/upload"
+          className="inline-block px-3.5 py-1.5 rounded bg-blue-600 text-white text-xs font-mono hover:bg-blue-700"
+        >
+          Upload Dataset
+        </Link>
       </div>
     );
   }
 
-  const { validation, drift } = qualityData;
+  if (isLoading && !validation) {
+    return (
+      <div className="py-20 text-center text-xs font-mono text-zinc-400">
+        Calculating Population Stability Index (PSI) via API...
+      </div>
+    );
+  }
+
+  if (!validation) return null;
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8 w-full">
       {/* Header */}
       <div className="border-b border-zinc-200 pb-4">
         <h1 className="text-xl font-bold tracking-tight text-zinc-900">Quality & Lineage</h1>
-        <p className="text-xs text-zinc-500 mt-0.5">Covariate drift index, PSI metrics, and immutable version lineage</p>
+        <p className="text-xs text-zinc-500 mt-0.5">
+          Covariate drift index (PSI) and immutable snapshot provenance for {dataset.name}
+        </p>
       </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 border-b border-zinc-200 pb-6">
         <div>
           <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Quality Index</div>
-          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">{dataset.qualityScore}/100</div>
+          <div className="text-2xl font-bold font-mono text-emerald-600 mt-1">
+            {validation.qualityScore}/100
+          </div>
         </div>
 
         <div>
           <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Completeness</div>
-          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">{(validation.completenessRatio * 100).toFixed(1)}%</div>
+          <div className="text-2xl font-bold font-mono text-blue-600 mt-1">
+            {(validation.completenessRatio * 100).toFixed(1)}%
+          </div>
         </div>
 
         <div>
           <div className="text-[11px] font-mono uppercase text-zinc-500 font-medium">Validity</div>
-          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">{(validation.validityRatio * 100).toFixed(1)}%</div>
+          <div className="text-2xl font-bold font-mono text-indigo-600 mt-1">
+            {(validation.validityRatio * 100).toFixed(1)}%
+          </div>
         </div>
 
         <div>
@@ -65,7 +104,7 @@ export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset })
 
         {drift.length === 0 ? (
           <div className="py-8 text-center text-xs font-mono text-zinc-500 border border-zinc-200 rounded">
-            Insufficient variance to calculate drift.
+            Need at least 4 numeric rows to compare split distributions for drift.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-xs">
@@ -75,30 +114,35 @@ export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset })
               return (
                 <div
                   key={item.feature}
-                  className={`p-3.5 rounded border space-y-1.5 transition-colors ${
-                    isStable
+                  className={`p-3.5 rounded border space-y-1.5 transition-colors ${isStable
                       ? 'border-emerald-200/80 bg-emerald-50/20'
                       : isModerate
-                      ? 'border-amber-200/80 bg-amber-50/20'
-                      : 'border-rose-200/80 bg-rose-50/20'
-                  }`}
+                        ? 'border-amber-200/80 bg-amber-50/20'
+                        : 'border-rose-200/80 bg-rose-50/20'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-zinc-900">{item.feature}</span>
                     <span
-                      className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border ${
-                        isStable
+                      className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border ${isStable
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : isModerate
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}
                     >
                       {item.status.replace('_', ' ')}
                     </span>
                   </div>
                   <div className="text-zinc-600 text-[11px]">
-                    PSI Score: <strong className={isStable ? 'text-emerald-700' : isModerate ? 'text-amber-700' : 'text-rose-700'}>{item.psiScore}</strong>
+                    PSI Score:{' '}
+                    <strong
+                      className={
+                        isStable ? 'text-emerald-700' : isModerate ? 'text-amber-700' : 'text-rose-700'
+                      }
+                    >
+                      {item.psiScore}
+                    </strong>
                   </div>
                   <div className="text-[10px] text-zinc-400 flex justify-between pt-1 border-t border-zinc-100">
                     <span>Baseline: {item.baselineMean}</span>
@@ -119,7 +163,10 @@ export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset })
 
         <div className="border border-zinc-200 rounded divide-y divide-zinc-100 overflow-hidden">
           {dataset.versions.map((ver) => (
-            <div key={ver.versionId} className="p-3.5 flex items-center justify-between text-xs font-mono hover:bg-zinc-50/60 transition-colors">
+            <div
+              key={ver.versionId}
+              className="p-3.5 flex items-center justify-between text-xs font-mono hover:bg-zinc-50/60 transition-colors"
+            >
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[10px]">
@@ -128,12 +175,14 @@ export const QualityMonitoring: React.FC<QualityMonitoringProps> = ({ dataset })
                   <span className="text-zinc-900 font-medium">{ver.description}</span>
                 </div>
                 <div className="text-[11px] text-zinc-400 mt-1">
-                  Author: <span className="text-zinc-600">{ver.author}</span> · {new Date(ver.createdAt).toLocaleDateString()} · {ver.dataHash.slice(0, 16)}...
+                  Author: <span className="text-zinc-600">{ver.author}</span> ·{' '}
+                  {new Date(ver.createdAt).toLocaleDateString()} · {ver.dataHash}
                 </div>
               </div>
 
               <div className="text-right text-[11px] text-zinc-600">
-                Quality: <strong className="text-emerald-600">{ver.qualityScore}%</strong> · {ver.rowCount.toLocaleString()} rows
+                Quality: <strong className="text-emerald-600">{ver.qualityScore}%</strong> ·{' '}
+                {ver.rowCount.toLocaleString()} rows
               </div>
             </div>
           ))}

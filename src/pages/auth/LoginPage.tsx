@@ -1,49 +1,34 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { toast } from 'sleek-toast';
 import { useAuth } from '../../context/AuthContext';
-import { User, UserRole } from '../../types';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loginWithCredentials } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       toast.warning('Please enter both email and password');
       return;
     }
 
-    const user: User = {
-      id: `usr-${Date.now().toString(36)}`,
-      name: email.split('@')[0],
-      email,
-      organization: 'DataForge Engineering Lab',
-      role: 'ML Engineer',
-      createdAt: new Date().toISOString(),
-    };
-
-    login(user);
-    toast.success('Signed in successfully');
-    navigate('/');
-  };
-
-  const handleDemoLogin = (role: UserRole) => {
-    const demoUser: User = {
-      id: 'usr-admin-demo',
-      name: `${role.replace(' ', '')} Lead`,
-      email: `${role.toLowerCase().replace(' ', '.')}.lead@dataforge.io`,
-      organization: 'DataForge Engineering Lab',
-      role,
-      createdAt: '2026-11-01T00:00:00Z',
-    };
-
-    login(demoUser);
-    toast.info(`Signed in as ${role}`);
-    navigate('/');
+    setIsSubmitting(true);
+    try {
+      await loginWithCredentials(email.trim(), password);
+      toast.success('Signed in successfully');
+      navigate('/');
+    } catch (err: any) {
+      toast.error(err.message || 'Authentication failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,7 +55,7 @@ export const LoginPage: React.FC = () => {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Sign In</h1>
           <p className="text-xs text-zinc-500 font-mono">
-            Enter your credentials to access workspaces
+            Authenticate with your registered workspace credentials
           </p>
         </div>
 
@@ -93,49 +78,37 @@ export const LoginPage: React.FC = () => {
             <label className="text-[11px] font-mono uppercase text-zinc-500 mb-1.5 block">
               Password
             </label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-3 pr-9 py-2 border border-zinc-300 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-blue-600 rounded-lg font-mono transition-colors"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-blue-600 transition-colors cursor-pointer p-0.5"
+              >
+                {showPassword ? <FiEyeOff className="w-3.5 h-3.5" /> : <FiEye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-lg shadow-xs"
+            disabled={isSubmitting}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-mono text-xs font-medium transition-colors cursor-pointer rounded-lg shadow-xs"
           >
-            Sign In
+            {isSubmitting ? 'Authenticating...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Demo Fast Access */}
-        <div className="pt-5 border-t border-zinc-200 space-y-2">
-          <div className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-            One-Click Demo Profiles
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('Data Engineer')}
-              className="px-2.5 py-1.5 border border-zinc-200 hover:border-blue-400 hover:text-blue-700 text-zinc-700 transition-colors cursor-pointer text-center rounded-lg bg-zinc-50/50"
-            >
-              Data Engineer
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('ML Engineer')}
-              className="px-2.5 py-1.5 border border-zinc-200 hover:border-blue-400 hover:text-blue-700 text-zinc-700 transition-colors cursor-pointer text-center rounded-lg bg-zinc-50/50"
-            >
-              ML Engineer
-            </button>
-          </div>
-        </div>
-
         {/* Link to Register */}
-        <div className="pt-2 text-center text-xs text-zinc-600">
+        <div className="pt-4 text-center text-xs text-zinc-600 border-t border-zinc-200">
           Don&apos;t have an account?{' '}
           <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-2">
             Create an account

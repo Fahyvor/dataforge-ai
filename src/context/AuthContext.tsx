@@ -1,67 +1,82 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '../types';
+import { api, getStoredToken, setStoredToken } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
-  updateRole: (role: UserRole) => void;
+  authLoading: boolean;
+  loginWithCredentials: (email: string, password: string) => Promise<void>;
+  registerUser: (payload: {
+    name: string;
+    email: string;
+    password: string;
+    organization?: string;
+    role: UserRole;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
+  updateRole: (role: UserRole) => Promise<void>;
 }
-
-const STORAGE_KEY = 'dataforge_auth_user';
-
-const DEFAULT_USER: User = {
-  id: 'usr-admin-demo',
-  name: 'Jordan Hayes',
-  email: 'jordan.hayes@dataforge.io',
-  organization: 'DataForge Engineering Lab',
-  role: 'ML Engineer',
-  createdAt: '2026-11-01T00:00:00Z',
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // fallback
-    }
-    return DEFAULT_USER;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    try {
-      if (user) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    } catch {
-      // ignore
+    const token = getStoredToken();
+    if (!token) {
+      setAuthLoading(false);
+      return;
     }
-  }, [user]);
 
-  const login = (newUser: User) => {
-    setUser(newUser);
+    api.auth
+      .me()
+      .then((res) => {
+        setUser(res.user);
+      })
+      .catch(() => {
+        setStoredToken(null);
+        setUser(null);
+      })
+      .finally(() => {
+        setAuthLoading(false);
+      });
+  }, []);
+
+  const loginWithCredentials = async (email: string, password: string) => {
+    const res = await api.auth.login({ email, password });
+    setStoredToken(res.token);
+    setUser(res.user);
   };
 
-  const logout = () => {
+  const registerUser = async (payload: {
+    name: string;
+    email: string;
+    password: string;
+    organization?: string;
+    role: UserRole;
+  }) => {
+    const res = await api.auth.register(payload);
+    setStoredToken(res.token);
+    setUser(res.user);
+  };
+
+  const logout = async () => {
+    await api.auth.logout();
+    setStoredToken(null);
     setUser(null);
   };
 
-  const updateRole = (newRole: UserRole) => {
-    if (user) {
-      setUser({ ...user, role: newRole });
-    }
+  const updateRole = async (newRole: UserRole) => {
+    const res = await api.auth.updateRole(newRole);
+    setUser(res.user);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateRole }}>
+    <AuthContext.Provider
+      value={{ user, authLoading, loginWithCredentials, registerUser, logout, updateRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

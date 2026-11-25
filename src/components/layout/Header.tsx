@@ -9,7 +9,7 @@ interface HeaderProps {
   activeDataset: Dataset | null;
   onSelectDataset: (id: string) => void;
   onOpenProfile: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,8 +22,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const handleSignOut = () => {
-    onLogout();
+  const handleSignOut = async () => {
+    await onLogout();
     navigate('/login');
   };
 
@@ -49,27 +49,28 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 max-w-sm w-full">
           <div className="flex items-center gap-2 border border-zinc-200 hover:border-blue-400 focus-within:border-blue-600 bg-zinc-50/50 hover:bg-white px-3 py-1.5 text-xs w-full transition-colors rounded-lg">
             <span className="text-zinc-400 font-mono text-[11px] shrink-0">Dataset:</span>
-            <select
-              value={activeDataset?.id || ''}
-              onChange={(e) => onSelectDataset(e.target.value)}
-              className="bg-transparent text-zinc-900 text-xs focus:outline-none cursor-pointer truncate flex-1 font-medium font-mono"
-            >
-              {datasets.map((ds) => (
-                <option key={ds.id} value={ds.id} className="bg-white text-zinc-900">
-                  {ds.name} ({ds.format.toUpperCase()} · {ds.rowCount} rows)
-                </option>
-              ))}
-            </select>
+            {datasets.length === 0 ? (
+              <span className="text-zinc-400 font-mono text-xs truncate">
+                No datasets loaded
+              </span>
+            ) : (
+              <select
+                value={activeDataset?.id || ''}
+                onChange={(e) => onSelectDataset(e.target.value)}
+                className="bg-transparent text-zinc-900 text-xs focus:outline-none cursor-pointer truncate flex-1 font-medium font-mono"
+              >
+                {datasets.map((ds) => (
+                  <option key={ds.id} value={ds.id} className="bg-white text-zinc-900">
+                    {ds.name} ({ds.format.toUpperCase()} · {ds.rowCount} rows)
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
-        {/* Right: User Controls & Live Status */}
+        {/* Right: User Controls */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-700 font-mono font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>ONLINE</span>
-          </div>
-
           {user ? (
             <div className="flex items-center gap-2 text-xs">
               <button

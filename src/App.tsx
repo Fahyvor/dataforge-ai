@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import SleekToast, { toast } from 'sleek-toast';
 import { useAuth } from './context/AuthContext';
@@ -20,116 +20,87 @@ import { ModelEvaluation } from './components/ml/ModelEvaluation';
 import { QualityMonitoring } from './components/quality/QualityMonitoring';
 import { ExperimentReports } from './components/experiments/ExperimentReports';
 import { Dataset, ExperimentRun, Pipeline, TrainedModel } from './types';
-import { INITIAL_DATASETS } from './data/sampleDatasets';
-import { getBaselineTrainedModels } from './utils/mlEngine';
+import { api } from './services/api';
 
 export function App() {
   const { user, logout, updateRole } = useAuth();
   const navigate = useNavigate();
 
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState<boolean>(true);
 
-  // Datasets State
-  const [datasets, setDatasets] = useState<Dataset[]>(INITIAL_DATASETS);
-  const [activeDatasetId, setActiveDatasetId] = useState<string>(INITIAL_DATASETS[0].id);
-
-  // Models State
-  const [models, setModels] = useState<TrainedModel[]>(getBaselineTrainedModels());
-
-  // Pipelines & Experiments State
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [activeDatasetId, setActiveDatasetId] = useState<string>('');
+  const [models, setModels] = useState<TrainedModel[]>([]);
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
-  const [experiments, setExperiments] = useState<ExperimentRun[]>([
-    {
-      id: 'run-884',
-      experimentName: 'Customer Retention Analysis',
-      runName: 'rf_depth12_n150',
-      modelId: 'mdl-baseline-rf',
-      algorithm: 'Random Forest',
-      metrics: { accuracy: 0.938, f1Score: 0.933, rocAuc: 0.962 },
-      parameters: { nEstimators: 150, maxDepth: 12 },
-      durationSec: 2.14,
-      author: 'Data Scientist',
-      createdAt: '2026-11-20T10:30:00Z',
-      tag: 'Production',
-    },
-    {
-      id: 'run-902',
-      experimentName: 'Customer Retention Analysis',
-      runName: 'gbm_depth6_lr0.05',
-      modelId: 'mdl-baseline-gbm',
-      algorithm: 'Gradient Boosting (GBM)',
-      metrics: { accuracy: 0.952, f1Score: 0.952, rocAuc: 0.978 },
-      parameters: { nEstimators: 200, maxDepth: 6, lr: 0.05 },
-      durationSec: 3.42,
-      author: 'Lead Engineer',
-      createdAt: '2026-11-20T14:45:00Z',
-      tag: 'Candidate',
-    },
-  ]);
+  const [experiments, setExperiments] = useState<ExperimentRun[]>([]);
 
-  // Sync with backend on startup
-  useEffect(() => {
-    fetch('/api/datasets')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.datasets && data.datasets.length > 0) {
-          const backendDatasets = data.datasets as Dataset[];
-          const existingIds = new Set(INITIAL_DATASETS.map((d) => d.id));
-          const additions = backendDatasets.filter((d) => !existingIds.has(d.id));
-          if (additions.length > 0) {
-            setDatasets([...INITIAL_DATASETS, ...additions]);
-          }
-        }
-      })
-      .catch(() => {});
+  const loadWorkspaceData = useCallback(async () => {
+    setIsLoadingWorkspace(true);
+    try {
+      const [dsRes, pipeRes, mdlRes, expRes] = await Promise.all([
+        api.datasets.list(),
+        api.pipelines.list(),
+        api.models.list(),
+        api.experiments.list(),
+      ]);
 
-    fetch('/api/pipelines')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.pipelines) {
-          setPipelines(data.pipelines);
-        }
-      })
-      .catch(() => {});
+      setDatasets(dsRes.datasets);
+      setPipelines(pipeRes.pipelines);
+      setModels(mdlRes.models);
+      setExperiments(expRes.runs);
+
+      setActiveDatasetId((prev) => {
+        if (prev && dsRes.datasets.some((d) => d.id === prev)) return prev;
+        return dsRes.datasets[0]?.id || '';
+      });
+    } catch {
+      // keep clean empty state if backend is not reachable yet
+    } finally {
+      setIsLoadingWorkspace(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadWorkspaceData();
+  }, [loadWorkspaceData]);
 
   const activeDataset = datasets.find((d) => d.id === activeDatasetId) || datasets[0] || null;
 
   const handleDatasetCreated = (newDataset: Dataset) => {
-    setDatasets([newDataset, ...datasets]);
+    setDatasets((prev) => [newDataset, ...prev]);
     setActiveDatasetId(newDataset.id);
     navigate('/');
   };
 
   const handleUpdateDataset = (updated: Dataset) => {
-    setDatasets(datasets.map((d) => (d.id === updated.id ? updated : d)));
+    setDatasets((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
   };
 
-  const handleModelCreated = (newModel: TrainedModel) => {
-    setModels([newModel, ...models]);
-    const newExp: ExperimentRun = {
-      id: `run-${Date.now().toString().slice(-4)}`,
-      experimentName: `${newModel.datasetName} Benchmark`,
-      runName: `${newModel.algorithm.toLowerCase().replace(/[^a-z0-9]/g, '_')}_v1`,
-      modelId: newModel.id,
-      algorithm: newModel.algorithm,
-      metrics: {
-        accuracy: newModel.metrics.accuracy || 0,
-        f1Score: newModel.metrics.f1Score || 0,
-        rocAuc: newModel.metrics.rocAuc || 0,
-      },
-      parameters: newModel.hyperparameters,
-      durationSec: newModel.metrics.trainingTimeSec,
-      author: user?.name || 'Engineer',
-      createdAt: new Date().toISOString(),
-      tag: 'Candidate',
-    };
-    setExperiments([newExp, ...experiments]);
+  const handleDeleteDataset = async (id: string) => {
+    try {
+      await api.datasets.remove(id);
+      setDatasets((prev) => {
+        const remaining = prev.filter((d) => d.id !== id);
+        if (activeDatasetId === id) {
+          setActiveDatasetId(remaining[0]?.id || '');
+        }
+        return remaining;
+      });
+      toast.info('Dataset deleted');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete dataset');
+    }
+  };
+
+  const handleModelCreated = (newModel: TrainedModel, newExperiment: ExperimentRun) => {
+    setModels((prev) => [newModel, ...prev]);
+    setExperiments((prev) => [newExperiment, ...prev]);
     navigate('/evaluation');
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.info('Signed out');
   };
 
@@ -167,23 +138,18 @@ export function App() {
                   <Routes>
                     <Route
                       path="/"
-                      element={<DatasetViewer dataset={activeDataset} onNavigateTab={(tab) => navigate(tab === 'datasets' ? '/' : `/${tab}`)} />}
-                    />
-                    <Route
-                      path="/datasets"
-                      element={<Navigate to="/" replace />}
-                    />
-                    <Route
-                      path="/upload"
                       element={
-                        <DatasetUpload
-                          onDatasetCreated={handleDatasetCreated}
-                          onSelectDataset={(id) => {
-                            setActiveDatasetId(id);
-                            navigate('/');
-                          }}
+                        <DatasetViewer
+                          dataset={activeDataset}
+                          isLoading={isLoadingWorkspace}
+                          onDeleteDataset={handleDeleteDataset}
                         />
                       }
+                    />
+                    <Route path="/datasets" element={<Navigate to="/" replace />} />
+                    <Route
+                      path="/upload"
+                      element={<DatasetUpload onDatasetCreated={handleDatasetCreated} />}
                     />
                     <Route
                       path="/validation"
@@ -205,20 +171,27 @@ export function App() {
                     />
                     <Route
                       path="/pipelines"
-                      element={<PipelineManager pipelines={pipelines} />}
+                      element={
+                        <PipelineManager
+                          pipelines={pipelines}
+                          datasets={datasets}
+                          onPipelineCreated={(p) => setPipelines((prev) => [p, ...prev])}
+                          onPipelineUpdated={(updated) => {
+                            setPipelines((prev) =>
+                              prev.map((p) => (p.id === updated.id ? updated : p))
+                            );
+                            // Refresh dataset in case cleaner step mutated records
+                            loadWorkspaceData();
+                          }}
+                          onPipelineDeleted={(id) =>
+                            setPipelines((prev) => prev.filter((p) => p.id !== id))
+                          }
+                        />
+                      }
                     />
-                    <Route
-                      path="/warehouse"
-                      element={<WarehouseExplorer />}
-                    />
-                    <Route
-                      path="/eda"
-                      element={<ExploratoryAnalysis dataset={activeDataset} />}
-                    />
-                    <Route
-                      path="/dashboard"
-                      element={<AnalyticsDashboard dataset={activeDataset} />}
-                    />
+                    <Route path="/warehouse" element={<WarehouseExplorer />} />
+                    <Route path="/eda" element={<ExploratoryAnalysis dataset={activeDataset} />} />
+                    <Route path="/dashboard" element={<AnalyticsDashboard dataset={activeDataset} />} />
                     <Route
                       path="/models"
                       element={
@@ -231,12 +204,22 @@ export function App() {
                     />
                     <Route
                       path="/evaluation"
-                      element={<ModelEvaluation models={models} />}
+                      element={
+                        <ModelEvaluation
+                          models={models}
+                          onModelUpdated={(updated) => {
+                            setModels((prev) =>
+                              prev.map((m) => (m.id === updated.id ? updated : m))
+                            );
+                            api.experiments.list().then((r) => setExperiments(r.runs)).catch(() => {});
+                          }}
+                          onModelDeleted={(id) =>
+                            setModels((prev) => prev.filter((m) => m.id !== id))
+                          }
+                        />
+                      }
                     />
-                    <Route
-                      path="/quality"
-                      element={<QualityMonitoring dataset={activeDataset} />}
-                    />
+                    <Route path="/quality" element={<QualityMonitoring dataset={activeDataset} />} />
                     <Route
                       path="/reports"
                       element={
@@ -244,6 +227,14 @@ export function App() {
                           dataset={activeDataset}
                           models={models}
                           experiments={experiments}
+                          onExperimentUpdated={(updated) =>
+                            setExperiments((prev) =>
+                              prev.map((e) => (e.id === updated.id ? updated : e))
+                            )
+                          }
+                          onExperimentDeleted={(id) =>
+                            setExperiments((prev) => prev.filter((e) => e.id !== id))
+                          }
                         />
                       }
                     />
@@ -252,15 +243,18 @@ export function App() {
                 </main>
               </div>
 
-              {/* Profile & API Tokens Modal */}
               {user && (
                 <ProfileModal
                   isOpen={isProfileOpen}
                   onClose={() => setIsProfileOpen(false)}
                   user={user}
-                  onUpdateRole={(newRole) => {
-                    updateRole(newRole);
-                    toast.info(`Updated role: ${newRole}`);
+                  onUpdateRole={async (newRole) => {
+                    try {
+                      await updateRole(newRole);
+                      toast.info(`Updated role: ${newRole}`);
+                    } catch (err: any) {
+                      toast.error(err.message || 'Failed to update role');
+                    }
                   }}
                 />
               )}
